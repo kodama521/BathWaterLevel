@@ -4,6 +4,7 @@ import Cv2ImgRotator
 import sys
 import csv
 import cv2
+import util
 
 class Caliblator(object):
     def __init__(self, img):
@@ -13,8 +14,7 @@ class Caliblator(object):
         self.__center_tupple = (self.__center["x"], self.__center["y"])
         self.__img_size = {"width":self.__img.shape[1], "height":self.__img.shape[0]}
         self.__img_size_tupple = (self.__img.shape[1], self.__img.shape[0])
-        self.__calib_data = {"angle":0, "level":0}
-        self.__readConfig()
+        self.__calib_data = util.readConfig()
         self.__line_y = 0
         #debug
 #        cv2.imshow("img", self.__img)
@@ -22,14 +22,6 @@ class Caliblator(object):
         
         # cv2.imshow("test", self.__img_rot)
         # cv2.waitKey(0)
-
-    def __readConfig(self):
-        with open('config.csv', 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                self.__calib_data[row[0]] = int(row[1])
-
-        print('calib_data =', self.__calib_data)
 
     def __getCurrentConfigImg(self):
         print('angle calib =', self.__calib_data['angle'])
