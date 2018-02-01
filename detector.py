@@ -36,7 +36,9 @@ class Detector(object):
 
         return bgr_vect_sum / (len(x_range) * len(y_range))
 
-    
+    def __get_level(self, y):
+        return self.__center['y'] - y
+
     def detect_range(self):
         x_size = self.__img_size['x']
         y_size = self.__img_size['y']
@@ -51,9 +53,9 @@ class Detector(object):
                 if np.dot(self.__color_vect_uni, pix_val) >= self.__vect_len_th:
                     self.__img_result[x:x+self.BLK_SIZE, y:y+self.BLK_SIZE] = (0,255,0)
 
-        
-        cv2.imshow("result", self.__img_result)
-        cv2.waitKey(0)
+
+#        cv2.imshow("result", self.__img_result)
+#        cv2.waitKey(0)
 
 if __name__ == '__main__':
     DEFAULT_IMG = 'test.jpg'
