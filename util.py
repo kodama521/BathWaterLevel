@@ -7,8 +7,9 @@ def readConfig():
     with open('config.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
-            calib_data[row[0]] = int(row[1])
-            
+            for col in range(len(row[1:])):
+                calib_data[row[0]] = [int(col) for col in row[1:]]
+
         print('calib_data =', calib_data)
 
         return calib_data

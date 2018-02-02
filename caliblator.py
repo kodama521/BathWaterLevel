@@ -14,8 +14,10 @@ class Caliblator(object):
         self.__center_tupple = (self.__center["x"], self.__center["y"])
         self.__img_size = {"width":self.__img.shape[1], "height":self.__img.shape[0]}
         self.__img_size_tupple = (self.__img.shape[1], self.__img.shape[0])
-        self.__calib_data = util.readConfig()
         self.__line_y = 0
+        self.__calib_data = util.readConfig()
+        self.__setting_area = False
+
         #debug
 #        cv2.imshow("img", self.__img)
 #        cv2.waitKey(0)
@@ -24,11 +26,11 @@ class Caliblator(object):
         # cv2.waitKey(0)
 
     def __getCurrentConfigImg(self):
-        print('angle calib =', self.__calib_data['angle'])
-        ret_img = self.__rotator.rotateAuto(self.__calib_data["angle"])
+#        print('angle calib =', self.__calib_data['angle'][0])
+        ret_img = self.__rotator.rotateAuto(self.__calib_data["angle"][0])
         color = (0,0,255)
         line_width = 1
-        line_ypos = self.__center["y"] - self.__calib_data["level"]
+        line_ypos = self.__center["y"] - self.__calib_data["level"][0]
 
         cv2.line(ret_img,
                  (0, line_ypos),
@@ -36,6 +38,25 @@ class Caliblator(object):
                  color,
                  line_width)
 
+        rect_x1 = (min(self.__calib_data["area"][0], self.__calib_data["area"][2])
+                   + self.__center["x"])
+        rect_y1 = (self.__center["y"] -
+                   max(self.__calib_data["area"][1], self.__calib_data["area"][3]))
+
+        rect_x2 = (max(self.__calib_data["area"][0], self.__calib_data["area"][2])
+                   + self.__center["x"])
+        rect_y2 = (self.__center["y"] -
+                   min(self.__calib_data["area"][1], self.__calib_data["area"][3]))
+                   
+
+        cv2.rectangle(ret_img,
+                      (self.__calib_data["area"][0] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][3]),
+                      (self.__calib_data["area"][2] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][1]),
+                      (0, 255, 0),
+                      line_width)
+
+        print('rect_pos =', (self.__calib_data["area"][0] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][1]),
+                      (self.__calib_data["area"][2] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][3]))
         #debug
 #        cv2.imshow("current_config_img", ret_img)
 #        cv2.waitKey(0)
@@ -44,19 +65,53 @@ class Caliblator(object):
 
 
     def __reRotate(self):
-        self.__calib_data["angle"] = self.__rotator.rotateInteractive()
+        self.__calib_data["angle"][0] = self.__rotator.rotateInteractive()
 
-    def __mouseCallback(self, eventType, x, y, flags, userdata):
+    def __mouseCallbackLevel(self, eventType, x, y, flags, userdata):
         if eventType == cv2.EVENT_LBUTTONDOWN:
 #            self.__line_y = self.__center["y"] - y
-            self.__calib_data["level"] = self.__center["y"] - y
+            self.__calib_data["level"][0] = self.__center["y"] - y
 
     def __reSetLevel(self):
         current_img = self.__getCurrentConfigImg()
-        window_name = "re_set_img!"
+        window_name = "re_set_level!"
         cv2.imshow(window_name, current_img)
-        cv2.setMouseCallback(window_name, self.__mouseCallback, None)
+        cv2.setMouseCallback(window_name, self.__mouseCallbackLevel, None)
 
+        self.__showCurrentConfigImgLoop(window_name)
+        
+    def __mouseCallbackArea(self, eventType, x, y, flags, userdata):
+        if eventType == cv2.EVENT_LBUTTONDOWN:
+            self.__setting_area = True
+            self.__calib_data["area"][0] = self.__calib_data["area"][2] = x - self.__center["x"]
+
+            self.__calib_data["area"][1] = self.__calib_data["area"][3] = self.__center["y"] - y
+
+        elif eventType == cv2.EVENT_MOUSEMOVE:
+            if self.__setting_area:
+                self.__calib_data["area"][2] = x - self.__center["x"]
+                self.__calib_data["area"][3] = self.__center["y"] - y
+
+        elif eventType == cv2.EVENT_LBUTTONUP:
+            self.__setting_area = False
+            tmp_x = self.__calib_data["area"][0]
+            tmp_y = self.__calib_data["area"][1]
+
+            self.__calib_data["area"][0] = min(tmp_x, self.__calib_data["area"][2])
+            self.__calib_data["area"][1] = min(tmp_y, self.__calib_data["area"][3])
+            self.__calib_data["area"][2] = max(tmp_x, self.__calib_data["area"][2])
+            self.__calib_data["area"][3] = max(tmp_y, self.__calib_data["area"][3])
+            
+
+    def __reSetArea(self):
+        current_img = self.__getCurrentConfigImg()
+        window_name = "re_set_area!"
+        cv2.imshow(window_name, current_img)
+        cv2.setMouseCallback(window_name, self.__mouseCallbackArea, None)
+        self.__showCurrentConfigImgLoop(window_name)
+
+
+    def __showCurrentConfigImgLoop(self, window_name):
         while True:
             current_img = self.__getCurrentConfigImg()
             cv2.imshow(window_name, current_img)
@@ -64,9 +119,11 @@ class Caliblator(object):
                 cv2.destroyWindow(window_name)
                 break
 
+        
     def __putText(self, img):
-        start_pos1 = (10, int(self.__img_size["height"]*6/8))
-        start_pos2 = (10,int(self.__img_size["height"]*7/8))
+        start_pos1 = (10, int(self.__img_size["height"]*5/8))
+        start_pos2 = (10,int(self.__img_size["height"]*6/8))
+        start_pos3 = (10,int(self.__img_size["height"]*7/8))
         font_type = cv2.FONT_HERSHEY_SIMPLEX
         font_size = 0.5
         color = (0,255,127)
@@ -91,12 +148,26 @@ class Caliblator(object):
                     font_bold,
                     line_type)
 
+        cv2.putText(img,
+                    "a: Area",
+                    start_pos3,
+                    font_type,
+                    font_size,
+                    color,
+                    font_bold,
+                    line_type)
+
 
         return img
 
     def __saveConfig(self):
-        write_array = [["angle", self.__calib_data["angle"]],
-                       ["level", self.__calib_data["level"]]]
+        write_array = [["angle", self.__calib_data["angle"][0]],
+                       ["level", self.__calib_data["level"][0]],
+                       ["area",
+                        self.__calib_data["area"][0],
+                        self.__calib_data["area"][1],
+                        self.__calib_data["area"][2],
+                        self.__calib_data["area"][3]]]
         
         with open('config.csv', 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
@@ -116,6 +187,8 @@ class Caliblator(object):
                 self.__reRotate()
             elif key == 108: # l
                 self.__reSetLevel()
+            elif key == 97: # a
+                self.__reSetArea()
             elif key == 27: #ESC
                 break
 
@@ -125,11 +198,15 @@ class Caliblator(object):
 
 if __name__ == '__main__':
     args = sys.argv
+    IMG_NAME_DEFAULT = 'test.jpg'
+    img_name = IMG_NAME_DEFAULT
     if len(args) <= 1:
-        print ('please input image name')
-        sys.exit()
+        print ('img set default', IMG_NAME_DEFAULT)
+    else:
+        img_name = args[1]
 
-    img = cv2.imread(args[1])
+
+    img = cv2.imread(img_name)
     if img is None:
         print ('no image!!:', img_name)
         sys.exit()
