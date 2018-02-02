@@ -14,5 +14,28 @@ def readConfig():
 
         return calib_data
 
+def transPosCenterBase(x=None, y=None, center_x=None, center_y=None):
+    ret_x = None
+    ret_y = None
+
+    if x is not None:
+        ret_x = x - center_x
+
+    if y is not None:
+        ret_y = center_y - y
+
+    return ret_x, ret_y
+
+def transPosOriginal(x=None, y=None, center_x=None, center_y=None):
+    ret = [None, None]
+
+    if x is not None:
+        ret_x = x + center_x
+
+    if y is not None:
+        ret_y = center_y - y
+
+    return ret_x, ret_y
+
 if __name__ == '__main__':
     readConfig()

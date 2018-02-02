@@ -30,7 +30,8 @@ class Caliblator(object):
         ret_img = self.__rotator.rotateAuto(self.__calib_data["angle"][0])
         color = (0,0,255)
         line_width = 1
-        line_ypos = self.__center["y"] - self.__calib_data["level"][0]
+        _, line_ypos = util.transPosOriginal(y=self.__calib_data["level"][0],
+                                             center_y=self.__center["y"])
 
         cv2.line(ret_img,
                  (0, line_ypos),
@@ -38,25 +39,26 @@ class Caliblator(object):
                  color,
                  line_width)
 
-        rect_x1 = (min(self.__calib_data["area"][0], self.__calib_data["area"][2])
-                   + self.__center["x"])
-        rect_y1 = (self.__center["y"] -
-                   max(self.__calib_data["area"][1], self.__calib_data["area"][3]))
 
-        rect_x2 = (max(self.__calib_data["area"][0], self.__calib_data["area"][2])
-                   + self.__center["x"])
-        rect_y2 = (self.__center["y"] -
-                   min(self.__calib_data["area"][1], self.__calib_data["area"][3]))
-                   
+        rect_pos_left_upper = util.transPosOriginal(x=self.__calib_data["area"][0],
+                                                      y=self.__calib_data["area"][3],
+                                                      center_x=self.__center["x"],
+                                                      center_y=self.__center["y"])
 
+        rect_pos_right_lower = util.transPosOriginal(x=self.__calib_data["area"][2],
+                                                       y=self.__calib_data["area"][1],
+                                                       center_x=self.__center["x"],
+                                                       center_y=self.__center["y"])
+        
+        
         cv2.rectangle(ret_img,
-                      (self.__calib_data["area"][0] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][3]),
-                      (self.__calib_data["area"][2] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][1]),
+                      tuple(rect_pos_left_upper),
+                      tuple(rect_pos_right_lower),
                       (0, 255, 0),
                       line_width)
 
-        print('rect_pos =', (self.__calib_data["area"][0] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][1]),
-                      (self.__calib_data["area"][2] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][3]))
+#        print('rect_pos =', (self.__calib_data["area"][0] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][1]),
+ #                     (self.__calib_data["area"][2] + self.__center["x"], self.__center["y"] - self.__calib_data["area"][3]))
         #debug
 #        cv2.imshow("current_config_img", ret_img)
 #        cv2.waitKey(0)
@@ -83,14 +85,24 @@ class Caliblator(object):
     def __mouseCallbackArea(self, eventType, x, y, flags, userdata):
         if eventType == cv2.EVENT_LBUTTONDOWN:
             self.__setting_area = True
-            self.__calib_data["area"][0] = self.__calib_data["area"][2] = x - self.__center["x"]
 
-            self.__calib_data["area"][1] = self.__calib_data["area"][3] = self.__center["y"] - y
+            (self.__calib_data["area"][0],
+             self.__calib_data["area"][1]) = util.transPosCenterBase(x=x,
+                                                                     y=y,
+                                                                     center_x=self.__center["x"],
+                                                                     center_y=self.__center["y"])
+            (self.__calib_data["area"][2],
+             self.__calib_data["area"][3]) = (self.__calib_data["area"][0],
+                                              self.__calib_data["area"][1])
+
 
         elif eventType == cv2.EVENT_MOUSEMOVE:
             if self.__setting_area:
-                self.__calib_data["area"][2] = x - self.__center["x"]
-                self.__calib_data["area"][3] = self.__center["y"] - y
+                (self.__calib_data["area"][2],
+                 self.__calib_data["area"][3]) = util.transPosCenterBase(x=x,
+                                                                         y=y,
+                                                                         center_x=self.__center["x"],
+                                                                         center_y=self.__center["y"])
 
         elif eventType == cv2.EVENT_LBUTTONUP:
             self.__setting_area = False
