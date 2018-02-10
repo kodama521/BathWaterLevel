@@ -7,8 +7,11 @@ import numpy as np
 
 import sys #debug
 
+import clientimg
+
 class Detector(object):
     BLK_SIZE = 5
+    PIX_INTENSITY_TH = 100
 
     def __init__(self, img, level_th, color_vect, vect_len_th):
         self.__level_th = level_th
@@ -42,13 +45,16 @@ class Detector(object):
     def detect(self):
         x_size = self.__img_size['x']
         y_size = self.__img_size['y']
-        level = self.__center['y'] - self.__calib_data["level"][0]
+#        _, level = util.transPosOriginal(y=self.__calib_data["level"][0],
+#                                         center_y=self.__center["y"])
+        
         start_x, start_y = util.transPosOriginal(x=self.__calib_data["area"][0],
                                                  y=self.__calib_data["area"][3],
                                                  center_x=self.__center["x"],
                                                  center_y=self.__center["y"])
+
         end_x, end_y = util.transPosOriginal(x=self.__calib_data["area"][2],
-                                             y=self.__calib_data["area"][1],
+                                             y=self.__calib_data["level"][0],
                                              center_x=self.__center["x"],
                                              center_y=self.__center["y"])
         end_x -= self.BLK_SIZE
@@ -60,14 +66,14 @@ class Detector(object):
         for y in range(start_y, end_y, self.BLK_SIZE):
             for x in range(start_x, end_x, self.BLK_SIZE):
                 pix_val = self.__get_mean_pixel(self.__img_rotate, range(x,x+self.BLK_SIZE), range(y,y+self.BLK_SIZE))
-                if np.linalg.norm(pix_val) > 0:
+                if np.linalg.norm(pix_val) > self.PIX_INTENSITY_TH:
                     pix_val /= np.linalg.norm(pix_val)
                 else:
                     pix_val *= 0
                 if np.dot(self.__color_vect_uni, pix_val) >= self.__vect_len_th:
                     self.__img_result[y:y+self.BLK_SIZE, x:x+self.BLK_SIZE] = (255,0,0)
-                    if y > self.__calib_data["level"][0] - self.BLK_SIZE:
-                        return True
+#                    if y > self.__calib_data["level"][0] - self.BLK_SIZE:
+                    return True
 
         return False
 
@@ -112,17 +118,28 @@ if __name__ == '__main__':
     VECT_LEN_TH = 0.8
     LEVEL_TH = 100
     
-    args = sys.argv
-    if len(args) <= 1:
-        img_name = DEFAULT_IMG
-    else:
-        img_name = args[1]
+#    args = sys.argv
+#    if len(args) <= 1:
+#        img_name = DEFAULT_IMG
+#    else:
+#        img_name = args[1]
     
-    img = cv2.imread(img_name)
-    if img is None:
-        print ('no image!!:', img_name)
+#    img = cv2.imread(DEFAULT_IMG)
+    #カメラの設定
+    capture=cv2.VideoCapture(0)
+    capture.set(3,320)
+    capture.set(4,240)
+    if not capture:
+        print("Could not open camera")
         sys.exit()
+
+    _, img=capture.read()
+
+#    if img is None:
+#        print ('no image!!:', img_name)
+#        sys.exit()
 
     detector = Detector(img, LEVEL_TH, COLOR_VECT, VECT_LEN_TH)
     print("result = ", detector.detect())
     detector.showResult()
+

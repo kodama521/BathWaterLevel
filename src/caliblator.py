@@ -172,7 +172,7 @@ class Caliblator(object):
 
         return img
 
-    def __saveConfig(self):
+    def __saveConfig(self, path):
         write_array = [["angle", self.__calib_data["angle"][0]],
                        ["level", self.__calib_data["level"][0]],
                        ["area",
@@ -181,7 +181,7 @@ class Caliblator(object):
                         self.__calib_data["area"][2],
                         self.__calib_data["area"][3]]]
         
-        with open('config.csv', 'w') as f:
+        with open(path + 'config.csv', 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
             writer.writerows(write_array)
 
@@ -204,7 +204,7 @@ class Caliblator(object):
             elif key == 27: #ESC
                 break
 
-        self.__saveConfig()
+        self.__saveConfig('../')
 
 
 
