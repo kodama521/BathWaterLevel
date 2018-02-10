@@ -27,7 +27,7 @@ def transPosCenterBase(x=None, y=None, center_x=None, center_y=None):
     return ret_x, ret_y
 
 def transPosOriginal(x=None, y=None, center_x=None, center_y=None):
-    ret = [None, None]
+    ret_x = ret_y = None
 
     if x is not None:
         ret_x = x + center_x
