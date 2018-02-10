@@ -107,7 +107,7 @@ class Detector(object):
         cv2.waitKey(0)
 
 if __name__ == '__main__':
-    DEFAULT_IMG = 'test.jpg'
+    DEFAULT_IMG = '../test.jpg'
     COLOR_VECT = np.array([0,0,1])
     VECT_LEN_TH = 0.8
     LEVEL_TH = 100

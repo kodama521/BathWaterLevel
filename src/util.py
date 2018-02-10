@@ -4,7 +4,7 @@ import csv
 
 def readConfig():
     calib_data = {}
-    with open('config.csv', 'r') as f:
+    with open('../config.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             for col in range(len(row[1:])):

@@ -210,7 +210,7 @@ class Caliblator(object):
 
 if __name__ == '__main__':
     args = sys.argv
-    IMG_NAME_DEFAULT = 'test.jpg'
+    IMG_NAME_DEFAULT = '../test.jpg'
     img_name = IMG_NAME_DEFAULT
     if len(args) <= 1:
         print ('img set default', IMG_NAME_DEFAULT)
@@ -226,3 +226,5 @@ if __name__ == '__main__':
 
     caliblator = Caliblator(img)
     caliblator.chooseMode()
+
+    
