@@ -13,12 +13,21 @@ class Detector(object):
     BLK_SIZE = 5
     PIX_INTENSITY_TH = 100
 
-    def __init__(self, img, level_th, color_vect, vect_len_th):
-        self.__level_th = level_th
+    def __init__(self, color_vect, vect_len_th):
         self.__vect_len_th = vect_len_th
         self.__color_vect_uni = color_vect / np.linalg.norm(color_vect)
-        self.__rotator = Cv2ImgRotator.Cv2ImgRotator(img.copy())
         self.__calib_data = util.readConfig()
+        #not initialized param
+        self.__rotator = None
+        self.__img_rotate = None
+        self.__img_size = {"x":0, "y":0}
+        self.__center = {"x":0, "y":0}
+        self.__center_tupple = {"x":0, "y":0}
+        self.__img_result = None
+        self.__inited = False
+
+    def input_img(self, img):
+        self.__rotator = Cv2ImgRotator.Cv2ImgRotator(img.copy())
         self.__img_rotate = self.__rotator.rotateAuto(self.__calib_data['angle'][0])
         self.__img_size = {"x":int(self.__img_rotate.shape[1]),
                            "y":int(self.__img_rotate.shape[0])}
@@ -28,8 +37,8 @@ class Detector(object):
         self.__center_tupple = (self.__center["x"], self.__center["y"])
         #debug
         self.__img_result = self.__img_rotate.copy()
+        self.__inited = True
 
-                
     @staticmethod
     def __get_mean_pixel(img, x_range, y_range):
         bgr_vect_sum = np.array([0,0,0])
@@ -43,6 +52,10 @@ class Detector(object):
         return self.__center['y'] - y
 
     def detect(self):
+        if not self.__inited:
+            print('input image!!')
+            return False
+
         x_size = self.__img_size['x']
         y_size = self.__img_size['y']
 #        _, level = util.transPosOriginal(y=self.__calib_data["level"][0],
@@ -116,7 +129,6 @@ if __name__ == '__main__':
     DEFAULT_IMG = '../test.jpg'
     COLOR_VECT = np.array([0,0,1])
     VECT_LEN_TH = 0.8
-    LEVEL_TH = 100
     
 #    args = sys.argv
 #    if len(args) <= 1:
@@ -139,7 +151,8 @@ if __name__ == '__main__':
 #        print ('no image!!:', img_name)
 #        sys.exit()
 
-    detector = Detector(img, LEVEL_TH, COLOR_VECT, VECT_LEN_TH)
+    detector = Detector(COLOR_VECT, VECT_LEN_TH)
+    detector.input_img(img)
     print("result = ", detector.detect())
     detector.showResult()
 
