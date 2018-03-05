@@ -10,8 +10,8 @@ import sys #debug
 import clientimg
 
 class Detector(object):
-    BLK_SIZE = 10
-    PIX_INTENSITY_TH = 100
+    __BLK_SIZE = 10
+    __PIX_INTENSITY_TH = 100
 
     def __init__(self, color_vect, vect_len_th):
         self.__vect_len_th = vect_len_th
@@ -70,22 +70,22 @@ class Detector(object):
                                              y=self.__calib_data["level"][0],
                                              center_x=self.__center["x"],
                                              center_y=self.__center["y"])
-        end_x -= self.BLK_SIZE
-        end_y -= self.BLK_SIZE
+        end_x -= Detector.__BLK_SIZE
+        end_y -= Detector.__BLK_SIZE
 #        print(start_x, start_y)
 #        print(end_x, end_y)
-#        print(self.BLK_SIZE)
+#        print(Detector.__BLK_SIZE)
 
-        for y in range(start_y, end_y, self.BLK_SIZE):
-            for x in range(start_x, end_x, self.BLK_SIZE):
-                pix_val = self.__get_mean_pixel(self.__img_rotate, range(x,x+self.BLK_SIZE), range(y,y+self.BLK_SIZE))
-                if np.linalg.norm(pix_val) > self.PIX_INTENSITY_TH:
+        for y in range(start_y, end_y, Detector.__BLK_SIZE):
+            for x in range(start_x, end_x, Detector.__BLK_SIZE):
+                pix_val = self.__get_mean_pixel(self.__img_rotate, range(x,x+Detector.__BLK_SIZE), range(y,y+Detector.__BLK_SIZE))
+                if np.linalg.norm(pix_val) > Detector.__PIX_INTENSITY_TH:
                     pix_val /= np.linalg.norm(pix_val)
                 else:
                     pix_val *= 0
                 if np.dot(self.__color_vect_uni, pix_val) >= self.__vect_len_th:
-                    self.__img_result[y:y+self.BLK_SIZE, x:x+self.BLK_SIZE] = (255,0,0)
-#                    if y > self.__calib_data["level"][0] - self.BLK_SIZE:
+                    self.__img_result[y:y+Detector.__BLK_SIZE, x:x+Detector.__BLK_SIZE] = (255,0,0)
+#                    if y > self.__calib_data["level"][0] - Detector.__BLK_SIZE:
                     return True
 
         return False
