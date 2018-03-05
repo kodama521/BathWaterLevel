@@ -7,12 +7,6 @@ import sys #for debug (main)
 import numpy as np
 
 class Cv2ImgRotator(object):
-    __pt1 = {"x":0, "y":0}
-    __pt2 = {"x":0, "y":0}
-    __rotating = False
-    __angle_rad = 0
-    __angle_rad_sum = 0
-    __inited = False
 
     def __init__(self, callback=None):
         self.__img = None
@@ -22,6 +16,13 @@ class Cv2ImgRotator(object):
         self.__center = {"x":0, "y":0}
         self.__center_tupple = (0, 0)
         self.__callback = callback
+        self.__pt1 = {"x":0, "y":0}
+        self.__pt2 = {"x":0, "y":0}
+        self.__rotating = False
+        self.__angle_rad = 0
+        self.__angle_rad_sum = 0
+        self.__inited = False
+
 
     @staticmethod
     def __resize(img):
