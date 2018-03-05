@@ -7,22 +7,21 @@ import sys #for debug (main)
 import numpy as np
 
 class Cv2ImgRotator(object):
-    def __init__(self, img, callback=None):
-        #入力画像
-        self.__img = self.__resize(img.copy())
-        self.__img_rot = self.__img.copy()
+    __pt1 = {"x":0, "y":0}
+    __pt2 = {"x":0, "y":0}
+    __rotating = False
+    __angle_rad = 0
+    __angle_rad_sum = 0
+    __inited = False
 
-        self.__img_size_tupple = (self.__img.shape[1], self.__img.shape[0])
-        self.__center = {"x":self.__img.shape[1]/2, "y":self.__img.shape[0]/2}
-        self.__center_tupple = (self.__center["x"], self.__center["y"])
+    def __init__(self, callback=None):
+        self.__img = None
+        self.__img_rot = None
 
-        self.__pt1 = {"x":0, "y":0}
-        self.__pt2 = {"x":0, "y":0}
-        self.__rotating = False
-        self.__angle_rad = 0
-        self.__angle_rad_sum = 0
+        self.__img_size_tupple = (0, 0)
+        self.__center = {"x":0, "y":0}
+        self.__center_tupple = (0, 0)
         self.__callback = callback
-
 
     @staticmethod
     def __resize(img):
@@ -61,10 +60,23 @@ class Cv2ImgRotator(object):
             self.__rotating = False
             self.__angle_rad_sum += self.__angle_rad
 
+    def input_img(self ,img):
+        self.__img = self.__resize(img.copy())
+        self.__img_rot = self.__img.copy()
+
+        self.__img_size_tupple = (self.__img.shape[1], self.__img.shape[0])
+        self.__center = {"x":self.__img.shape[1]/2, "y":self.__img.shape[0]/2}
+        self.__center_tupple = (self.__center["x"], self.__center["y"])
+
+        self.__inited = True
+
     def getResizeImg(self):
         return self.__img
 
     def rotateAuto(self, angle_deg):
+        if not self.__inited:
+            print ('[Rotator error1]no image inputed yet')
+            return None
         rotate_matrix = cv2.getRotationMatrix2D(self.__center_tupple, angle_deg, 1.0)
 
         return cv2.warpAffine(self.__img,
@@ -74,6 +86,10 @@ class Cv2ImgRotator(object):
 
 
     def rotateInteractive(self):
+        if not self.__inited:
+            print ('[Rotator error2]no image inputed yet')
+            return None
+
         window_name = "rotate!"
         cv2.imshow(window_name, self.__img_rot)
         cv2.setMouseCallback(window_name, self.__mouseCallback, None)
@@ -101,7 +117,8 @@ if __name__ == "__main__":
         print ('no image!!:', img_name)
         sys.exit()
 
-    img_rotator = Cv2ImgRotator(img)
+    img_rotator = Cv2ImgRotator()
+    img_rotator.input_img(img)
 
     angle = img_rotator.rotateInteractive()
 

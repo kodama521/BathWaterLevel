@@ -10,7 +10,7 @@ import sys #debug
 import clientimg
 
 class Detector(object):
-    BLK_SIZE = 5
+    BLK_SIZE = 10
     PIX_INTENSITY_TH = 100
 
     def __init__(self, color_vect, vect_len_th):
@@ -18,7 +18,7 @@ class Detector(object):
         self.__color_vect_uni = color_vect / np.linalg.norm(color_vect)
         self.__calib_data = util.readConfig()
         #not initialized param
-        self.__rotator = None
+        self.__rotator = Cv2ImgRotator.Cv2ImgRotator()
         self.__img_rotate = None
         self.__img_size = {"x":0, "y":0}
         self.__center = {"x":0, "y":0}
@@ -27,7 +27,7 @@ class Detector(object):
         self.__inited = False
 
     def input_img(self, img):
-        self.__rotator = Cv2ImgRotator.Cv2ImgRotator(img.copy())
+        self.__rotator.input_img(img.copy())
         self.__img_rotate = self.__rotator.rotateAuto(self.__calib_data['angle'][0])
         self.__img_size = {"x":int(self.__img_rotate.shape[1]),
                            "y":int(self.__img_rotate.shape[0])}
