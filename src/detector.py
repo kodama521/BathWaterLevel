@@ -12,6 +12,7 @@ import clientimg
 class Detector(object):
     __BLK_SIZE = 10
     __PIX_INTENSITY_TH = 100
+    __IMG_SIZE =(320 ,240)
 
     def __init__(self, color_vect, vect_len_th):
         self.__vect_len_th = vect_len_th
@@ -27,7 +28,7 @@ class Detector(object):
         self.__inited = False
 
     def input_img(self, img):
-        self.__rotator.input_img(img.copy())
+        self.__rotator.input_img(cv2.resize(img, Detector.__IMG_SIZE))
         self.__img_rotate = self.__rotator.rotateAuto(self.__calib_data['angle'][0])
         self.__img_size = {"x":int(self.__img_rotate.shape[1]),
                            "y":int(self.__img_rotate.shape[0])}
@@ -127,8 +128,8 @@ class Detector(object):
 
 if __name__ == '__main__':
     DEFAULT_IMG = '../test.jpg'
-    COLOR_VECT = np.array([0,0,1])
-    VECT_LEN_TH = 0.8
+    COLOR_VECT = np.array([0,135,107])
+    VECT_LEN_TH = 0.9
     
 #    args = sys.argv
 #    if len(args) <= 1:
@@ -136,16 +137,16 @@ if __name__ == '__main__':
 #    else:
 #        img_name = args[1]
     
-#    img = cv2.imread(DEFAULT_IMG)
+    img = cv2.imread(DEFAULT_IMG)
     #カメラの設定
-    capture=cv2.VideoCapture(0)
-    capture.set(3,320)
-    capture.set(4,240)
-    if not capture:
-        print("Could not open camera")
-        sys.exit()
+#    capture=cv2.VideoCapture(0)
+#    capture.set(3,320)
+#    capture.set(4,240)
+    # if not capture:
+    #     print("Could not open camera")
+    #     sys.exit()
 
-    _, img=capture.read()
+    # _, img=capture.read()
 
 #    if img is None:
 #        print ('no image!!:', img_name)

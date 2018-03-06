@@ -7,8 +7,11 @@ import cv2
 import util
 
 class Caliblator(object):
+    __IMG_SIZE =(320 ,240)
+
     def __init__(self, img):
-        self.__rotator = Cv2ImgRotator.Cv2ImgRotator(img.copy())
+        self.__rotator = Cv2ImgRotator.Cv2ImgRotator()
+        self.__rotator.input_img(cv2.resize(img, Caliblator.__IMG_SIZE))
         self.__img = self.__rotator.getResizeImg()
         self.__center = {"x":int(self.__img.shape[1]/2), "y":int(self.__img.shape[0]/2)}
         self.__center_tupple = (self.__center["x"], self.__center["y"])
