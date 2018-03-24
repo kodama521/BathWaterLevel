@@ -10,38 +10,36 @@ import sys #debug
 import clientimg
 
 class Detector(object):
-    __BLK_SIZE = 10
-    __PIX_INTENSITY_TH = 100
-    __IMG_SIZE =(320 ,240)
+    _BLK_SIZE = 10
+    _PIX_INTENSITY_TH = 100
+    _IMG_SIZE =(320 ,240)
 
-    def __init__(self, color_vect, vect_len_th):
-        self.__vect_len_th = vect_len_th
-        self.__color_vect_uni = color_vect / np.linalg.norm(color_vect)
-        self.__calib_data = util.readConfig()
+    def __init__(self):
+        self._calib_data = util.readConfig()
         #not initialized param
-        self.__rotator = Cv2ImgRotator.Cv2ImgRotator()
-        self.__img_rotate = None
-        self.__img_size = {"x":0, "y":0}
-        self.__center = {"x":0, "y":0}
-        self.__center_tupple = {"x":0, "y":0}
-        self.__img_result = None
-        self.__inited = False
+        self._rotator = Cv2ImgRotator.Cv2ImgRotator()
+        self._img_rotate = None
+        self._img_size = {"x":0, "y":0}
+        self._center = {"x":0, "y":0}
+        self._center_tupple = {"x":0, "y":0}
+        self._img_result = None
+        self._inited = False
 
     def input_img(self, img):
-        self.__rotator.input_img(cv2.resize(img, Detector.__IMG_SIZE))
-        self.__img_rotate = self.__rotator.rotateAuto(self.__calib_data['angle'][0])
-        self.__img_size = {"x":int(self.__img_rotate.shape[1]),
-                           "y":int(self.__img_rotate.shape[0])}
+        self._rotator.input_img(cv2.resize(img, Detector._IMG_SIZE))
+        self._img_rotate = self._rotator.rotateAuto(self._calib_data['angle'][0])
+        self._img_size = {"x":int(self._img_rotate.shape[1]),
+                          "y":int(self._img_rotate.shape[0])}
 
-        self.__center = {"x":int(self.__img_rotate.shape[1]/2),
-                         "y":int(self.__img_rotate.shape[0]/2)}
-        self.__center_tupple = (self.__center["x"], self.__center["y"])
+        self._center = {"x":int(self._img_rotate.shape[1]/2),
+                         "y":int(self._img_rotate.shape[0]/2)}
+        self._center_tupple = (self._center["x"], self._center["y"])
         #debug
-        self.__img_result = self.__img_rotate.copy()
-        self.__inited = True
+        self._img_result = self._img_rotate.copy()
+        self._inited = True
 
     @staticmethod
-    def __get_mean_pixel(img, x_range, y_range):
+    def _get_mean_pixel(img, x_range, y_range):
         bgr_vect_sum = np.array([0,0,0])
         for y in y_range:
             for x in x_range:
@@ -49,72 +47,74 @@ class Detector(object):
 
         return bgr_vect_sum / (len(x_range) * len(y_range))
 
-    def __get_level(self, y):
-        return self.__center['y'] - y
+    def _get_level(self, y):
+        return self._center['y'] - y
 
-    def detect(self):
-        if not self.__inited:
+    def detect(self, color_vect, vect_len_th):
+        color_vect_uni = color_vect / np.linalg.norm(color_vect)
+
+        if not self._inited:
             print('input image!!')
             return False
 
-        x_size = self.__img_size['x']
-        y_size = self.__img_size['y']
-#        _, level = util.transPosOriginal(y=self.__calib_data["level"][0],
-#                                         center_y=self.__center["y"])
+        x_size = self._img_size['x']
+        y_size = self._img_size['y']
+#        _, level = util.transPosOriginal(y=self._calib_data["level"][0],
+#                                         center_y=self._center["y"])
         
-        start_x, start_y = util.transPosOriginal(x=self.__calib_data["area"][0],
-                                                 y=self.__calib_data["area"][3],
-                                                 center_x=self.__center["x"],
-                                                 center_y=self.__center["y"])
+        start_x, start_y = util.transPosOriginal(x=self._calib_data["area"][0],
+                                                 y=self._calib_data["area"][3],
+                                                 center_x=self._center["x"],
+                                                 center_y=self._center["y"])
 
-        end_x, end_y = util.transPosOriginal(x=self.__calib_data["area"][2],
-                                             y=self.__calib_data["level"][0],
-                                             center_x=self.__center["x"],
-                                             center_y=self.__center["y"])
-        end_x -= Detector.__BLK_SIZE
-        end_y -= Detector.__BLK_SIZE
+        end_x, end_y = util.transPosOriginal(x=self._calib_data["area"][2],
+                                             y=self._calib_data["level"][0],
+                                             center_x=self._center["x"],
+                                             center_y=self._center["y"])
+        end_x -= Detector._BLK_SIZE
+        end_y -= Detector._BLK_SIZE
 #        print(start_x, start_y)
 #        print(end_x, end_y)
-#        print(Detector.__BLK_SIZE)
+#        print(Detector._BLK_SIZE)
 
-        for y in range(start_y, end_y, Detector.__BLK_SIZE):
-            for x in range(start_x, end_x, Detector.__BLK_SIZE):
-                pix_val = self.__get_mean_pixel(self.__img_rotate, range(x,x+Detector.__BLK_SIZE), range(y,y+Detector.__BLK_SIZE))
-                if np.linalg.norm(pix_val) > Detector.__PIX_INTENSITY_TH:
+        for y in range(start_y, end_y, Detector._BLK_SIZE):
+            for x in range(start_x, end_x, Detector._BLK_SIZE):
+                pix_val = self._get_mean_pixel(self._img_rotate, range(x,x+Detector._BLK_SIZE), range(y,y+Detector._BLK_SIZE))
+                if np.linalg.norm(pix_val) > Detector._PIX_INTENSITY_TH:
                     pix_val /= np.linalg.norm(pix_val)
                 else:
                     pix_val *= 0
-                if np.dot(self.__color_vect_uni, pix_val) >= self.__vect_len_th:
-                    self.__img_result[y:y+Detector.__BLK_SIZE, x:x+Detector.__BLK_SIZE] = (255,0,0)
-#                    if y > self.__calib_data["level"][0] - Detector.__BLK_SIZE:
+                if np.dot(color_vect_uni, pix_val) >= vect_len_th:
+                    self._img_result[y:y+Detector._BLK_SIZE, x:x+Detector._BLK_SIZE] = (255,0,0)
+#                    if y > self._calib_data["level"][0] - Detector._BLK_SIZE:
                     return True
 
         return False
 
     def showResult(self):
-        tmp_img = self.__img_result.copy()
+        tmp_img = self._img_result.copy()
 
         color = (0,0,255)
         line_width = 1
 
-        _, line_ypos = util.transPosOriginal(y=self.__calib_data["level"][0],
-                                             center_y=self.__center["y"])
+        _, line_ypos = util.transPosOriginal(y=self._calib_data["level"][0],
+                                             center_y=self._center["y"])
         cv2.line(tmp_img,
                  (0, line_ypos),
-                 (self.__img_size["x"] - 1, line_ypos),
+                 (self._img_size["x"] - 1, line_ypos),
                  color,
                  line_width)
 
 
-        rect_pos_left_upper = util.transPosOriginal(x=self.__calib_data["area"][0],
-                                                    y=self.__calib_data["area"][3],
-                                                    center_x=self.__center["x"],
-                                                    center_y=self.__center["y"])
+        rect_pos_left_upper = util.transPosOriginal(x=self._calib_data["area"][0],
+                                                    y=self._calib_data["area"][3],
+                                                    center_x=self._center["x"],
+                                                    center_y=self._center["y"])
 
-        rect_pos_right_lower = util.transPosOriginal(x=self.__calib_data["area"][2],
-                                                     y=self.__calib_data["area"][1],
-                                                     center_x=self.__center["x"],
-                                                     center_y=self.__center["y"])
+        rect_pos_right_lower = util.transPosOriginal(x=self._calib_data["area"][2],
+                                                     y=self._calib_data["area"][1],
+                                                     center_x=self._center["x"],
+                                                     center_y=self._center["y"])
         
         
         cv2.rectangle(tmp_img,
@@ -127,7 +127,7 @@ class Detector(object):
         cv2.waitKey(0)
 
 if __name__ == '__main__':
-    DEFAULT_IMG = '../test.jpg'
+    DEFAULT_IMG = '../test_img/test.jpg'
     COLOR_VECT = np.array([0,135,107])
     VECT_LEN_TH = 0.9
     
@@ -152,8 +152,8 @@ if __name__ == '__main__':
 #        print ('no image!!:', img_name)
 #        sys.exit()
 
-    detector = Detector(COLOR_VECT, VECT_LEN_TH)
+    detector = Detector()
     detector.input_img(img)
-    print("result = ", detector.detect())
+    print("result = ", detector.detect(COLOR_VECT, VECT_LEN_TH))
     detector.showResult()
 
