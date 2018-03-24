@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import detector
+from line_laser_detector import LineLaserDetector
 import threading
 import numpy as np
 import sys
@@ -22,12 +22,12 @@ class StateMachine(object):
     __VECT_LEN_TH = 0.8
     __DEBUG_TIMER_FREQ_SEC = 0.2
     __AUDIO_NAME = 'tanuki.wav'
+    __SAVE_IMG_PATH = '../debug/output_img'
 
-    def __init__(self):
+    def __init__(self, detector):
         self.__audio = audio_player.AudioPlayerPygame(StateMachine.__AUDIO_NAME)
         self.__capture = cv2.VideoCapture(0)
-        self.__detector = detector.Detector(StateMachine.__COLOR_VECT,
-                                            StateMachine.__VECT_LEN_TH)
+        self.__detector = detector
 
         self.__state_key = 'sleeping'
         self.__sleeping_proc = (self.__switch_proc_sleeping,
@@ -57,6 +57,8 @@ class StateMachine(object):
             print("Could not open camera")
             sys.exit()
 
+        self.__timer_count = 0
+
 
     def __push_event(self, event_key):
         print('pushed event:', event_key)
@@ -83,16 +85,30 @@ class StateMachine(object):
         self.__audio.stop()
 
     def __timer_proc(self):
+        self.__timer_count += 1 #for debug
+
         _, img = self.__capture.read()
         self.__detector.input_img(img)
 
-        if self.__detector.detect():
-            self.__push_event('detected_full')
-            print('detected full!!')
-            self.__detector.showResult()
+        
+#        if self.__detector.detect():
+#            self.__push_event('detected_full')
+#            print('detected full!!')
+#            self.__detector.showResult()
 
-        else:
-            self.__push_event('detected_not_full')
+        # else:
+        #     self.__push_event('detected_not_full')
+
+        ########### for debug ################
+        save_img = self.__detector.detect()
+        cv2.imwrite(StateMachine.__SAVE_IMG_PATH
+                    + '/capture_img'
+                    + str(self.__timer_count)
+                    + '.png'
+                    ,save_img)
+        
+        self.__push_event('detected_not_full')
+
 
     def __detected_full_proc(self):
         self.__state_key = 'indicating'
@@ -147,5 +163,6 @@ class StateMachine(object):
 
 
 if __name__ == '__main__':
-    state_machine = StateMachine()
+    detector = LineLaserDetector()
+    state_machine = StateMachine(detector)
     state_machine.start_wait_event_loop()
