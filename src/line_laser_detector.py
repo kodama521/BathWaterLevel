@@ -5,6 +5,8 @@ import sys
 import util
 
 class LineLaserDetector(detector.Detector):
+    __LASER_INTENSITY_TH = 100
+
     def __init__(self):
         super().__init__()
 
@@ -20,64 +22,72 @@ class LineLaserDetector(detector.Detector):
 
         return red_img
 
-    @staticmethod
-    def __get_lines(img, min_line_length, max_line_gap):
-        img_size = {"w":img.shape[1], "h":img.shape[0]}
-        lines = cv2.HoughLines(img,1,np.pi/180,100)
+    def __get_clip_area_img(self, img):
+        start_x, start_y = util.transPosOriginal(x=self._calib_data["area"][0],
+                                                 y=self._calib_data["area"][3],
+                                                 center_x=self._center["x"],
+                                                 center_y=self._center["y"])
 
-        ret_img = np.zeros((img_size['h'], img_size['w'], 3), np.uint8)
+        end_x, end_y = util.transPosOriginal(x=self._calib_data["area"][2],
+                                             y=self._calib_data["area"][1],
+                                             center_x=self._center["x"],
+                                             center_y=self._center["y"])
 
-        for line in lines[:2]:
-            for rho,theta in line:
-                a = np.cos(theta)
-                b = np.sin(theta)
-                x0 = a*rho
-                y0 = b*rho
-                x1 = int(x0 + 1000*(-b))
-                y1 = int(y0 + 1000*(a))
-                x2 = int(x0 - 1000*(-b))
-                y2 = int(y0 - 1000*(a))
+        return img[start_y:end_y, start_x:end_x, :]
 
-                cv2.line(ret_img,(x1,y1),(x2,y2),(0,0,255),2)
+    def __get_laser_intensity(self, gray_area_img):
+        pix_val_sum = 0.0
+        mask_count = 0
+        for y in range(gray_area_img.shape[0]):
+            for x in range(gray_area_img.shape[1]):
+                if gray_area_img[y,x] > 0:
+                    pix_val_sum += gray_area_img[y, x]
+                    mask_count += 1
 
-        return ret_img
+        return pix_val_sum / mask_count
 
     def detect(self):
-#        gray_img = self.__get_raser_gray_img(img, 50)
-#        edge_img = cv2.Canny(gray_img, 50, 50, apertureSize = 3)
-#        line_img = self.__get_lines(edge_img, MIN_LINE_LEMGTH, MAX_LINE_GAP)
-
         if not self._inited:
             print('input image!!')
 
-        
-        return self._img_rotate
+        clip_img = self.__get_clip_area_img(self._img_rotate)
+        tmp_gray_img = self.__get_raser_gray_img(clip_img, 0)
+        th, _ = cv2.threshold(tmp_gray_img, 0, 1, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
-#        return gray_img, edge_img, line_img
+        gray_img = self.__get_raser_gray_img(self._img_rotate, th)
+
+        line_intensity = self.__get_laser_intensity(gray_img)
+        
+
+        return (line_intensity > LineLaserDetector.__LASER_INTENSITY_TH)
+
 
 
     
 
 if __name__ == '__main__':
-    IMG_NAME = '../test_img/IMG_7645.JPG'
+    IMG_NAME1 = '../test_img/IMG_7645.JPG'
+    IMG_NAME2 = '../test_img/IMG_7644.JPG'
     IMG_SIZE =(320 ,240)
     MIN_LINE_LEMGTH = 20
     MAX_LINE_GAP = 50
 
-
-    img = cv2.imread(IMG_NAME)
-    if img is None:
+    img1 = cv2.imread(IMG_NAME1)
+    img2 = cv2.imread(IMG_NAME2)
+    if img1 is None or img2 is None:
         print ('no image!!:', IMG_NAME)
         sys.exit()
 
-    img = cv2.resize(img, IMG_SIZE)
+    img1 = cv2.resize(img1, IMG_SIZE)
+    img2 = cv2.resize(img2, IMG_SIZE)
 
     line_laser_detector = LineLaserDetector()
-    gray_img, edge_img, line_img = line_laser_detector.detect(img)
+    line_laser_detector.input_img(img1)
+    result1 = line_laser_detector.detect()
 
-    line_laser_detector.input_img(img)
-    cv2.imshow('input_img', img)
-    cv2.imshow('edge_img', edge_img)
-    cv2.imshow('line_img', line_img)
-    cv2.waitKey(0)
+    line_laser_detector.input_img(img2)
+    result2 = line_laser_detector.detect()
 
+    print('line_intensity1 =', result1)
+    print('line_intensity2 =', result2)
+    
