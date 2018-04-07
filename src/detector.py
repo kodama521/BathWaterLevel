@@ -14,6 +14,11 @@ class Detector(object):
     _PIX_INTENSITY_TH = 100
     _IMG_SIZE =(320 ,240)
 
+    RESULT_INVALID = -1
+    RESULT_NOT_FULL = 0
+    RESULT_FULL = 1
+    RESULT_INVALID_ENV = 2
+    
     def __init__(self):
         self._calib_data = util.readConfig()
         #not initialized param
@@ -26,7 +31,8 @@ class Detector(object):
         self._inited = False
 
     def input_img(self, img):
-        self._rotator.input_img(cv2.resize(img, Detector._IMG_SIZE))
+        self._img_resize = cv2.resize(img, Detector._IMG_SIZE)
+        self._rotator.input_img(self._img_resize)
         self._img_rotate = self._rotator.rotateAuto(self._calib_data['angle'][0])
         self._img_size = {"x":int(self._img_rotate.shape[1]),
                           "y":int(self._img_rotate.shape[0])}
