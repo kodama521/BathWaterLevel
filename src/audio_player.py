@@ -3,9 +3,15 @@
 import pygame.mixer
 
 class AudioPlayerPygame(object):
-    def __init__(self, music_name):
+    def __init__(self, music_name=None):
         pygame.mixer.init()
 
+        self.__init_flag = False
+
+        if music_name is not None:
+            self.set_music(music_name)
+        
+    def set_music(self, music_name):
         self.__init_flag = False
         try:
             self.__sound = pygame.mixer.Sound(music_name)
@@ -38,10 +44,12 @@ class AudioPlayerPygame(object):
         self.__sound.stop()
 
 if __name__ == '__main__':
-    audio = AudioPlayerPygame('tanuki.wav')
+    audio = AudioPlayerPygame('../sound/lamp-oshizu.wav')
     audio.play(loop=True)
     input()
     audio.stop()
+    audio.set_music('../sound/tanuki.wav')
+    audio.play(loop=False)
     print('audio_stoped!')
     input()
     print('test end')
