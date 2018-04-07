@@ -44,9 +44,9 @@ class Caliblator(object):
 
 
         rect_pos_left_upper = util.transPosOriginal(x=self.__calib_data["area"][0],
-                                                      y=self.__calib_data["area"][3],
-                                                      center_x=self.__center["x"],
-                                                      center_y=self.__center["y"])
+                                                    y=self.__calib_data["area"][3],
+                                                    center_x=self.__center["x"],
+                                                    center_y=self.__center["y"])
 
         rect_pos_right_lower = util.transPosOriginal(x=self.__calib_data["area"][2],
                                                        y=self.__calib_data["area"][1],
@@ -204,16 +204,16 @@ class Caliblator(object):
                 self.__reSetLevel()
             elif key == 97: # a
                 self.__reSetArea()
-            elif key == 27: #ESC
-                break
+#            elif key == 27: #ESC
+#                break
 
-        self.__saveConfig('../')
+            self.__saveConfig('../')
 
 
 
 if __name__ == '__main__':
     args = sys.argv
-    IMG_NAME_DEFAULT = '../test.jpg'
+    IMG_NAME_DEFAULT = '../test_img/IMG_7645.JPG'
     img_name = IMG_NAME_DEFAULT
     if len(args) <= 1:
         print ('img set default', IMG_NAME_DEFAULT)
