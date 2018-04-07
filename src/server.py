@@ -11,15 +11,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
 #        while True:
         #HELLOを受け取ったらJPEG圧縮したカメラ画像を文字列にして送信
         rcv_data = self.request.recv(1024).strip()
-#        if len(rcv_data) == 0:
-#            break
-        print('receive message:', rcv_data)
-        _, frame = capture.read()
-        jpegstring = cv2.imencode('.jpeg',frame)[1].tostring()
-        print('send_size =', len(jpegstring))
-        self.request.send(jpegstring)
-        print('send end')
-#        self.request.close()
+        if rcv_data == b'HELLO':
+            _, frame = capture.read()
+            jpegstring = cv2.imencode('.jpeg',frame)[1].tostring()
+            self.request.send(jpegstring)
+        
 
 #環境に応じて変更
 #HOST = '192.168.1.101'

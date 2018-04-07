@@ -6,6 +6,7 @@ import numpy as np
 import sys
 import cv2  ##only for keybord debug
 import audio_player
+import switch_ctrl as sw
 
 COLOR_VECT = np.array([0,0,1])
 VECT_LEN_TH = 0.8
@@ -23,11 +24,13 @@ class StateMachine(object):
     __DEBUG_TIMER_FREQ_SEC = 0.2
     __AUDIO_NAME = 'tanuki.wav'
     __SAVE_IMG_PATH = '../debug/output_img'
+    __SW_PIN_NUM = 20
 
     def __init__(self, detector):
         self.__audio = audio_player.AudioPlayerPygame(StateMachine.__AUDIO_NAME)
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
+        sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
 
         self.__state_key = 'sleeping'
         self.__sleeping_proc = (self.__switch_proc_sleeping,
@@ -148,10 +151,10 @@ class StateMachine(object):
         
         while True:
             #switch debug
-            cv2.imshow("switch", img)
-            if cv2.waitKey(1) == 115:  #'s'
-                print('switch pushed!')
-                self.__push_event('switch')
+#            cv2.imshow("switch", img)
+#            if cv2.waitKey(1) == 115:  #'s'
+#                print('switch pushed!')
+            #self.__push_event('switch')
 
             if self.__event_buf:
                 event_key = self.__event_buf[0]
