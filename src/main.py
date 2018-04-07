@@ -14,20 +14,27 @@ LEVEL_TH = 100
 
 
 class StateMachine(object):
-    __EVENT_KIND = {'switch':0, 'timer':1, 'detected_full':2, 'detected_not_full':3}
-    __STATE_KIND = {'sleeping':0, 'detecting':1, 'indicating':2}
+    __EVENT_KIND = {'switch':0,
+                    'timer':1,
+                    'detected_full':2,
+                    'detected_not_full':3,
+                    'detected_light_on':4,
+                    'detected_light_off':5}
+    __STATE_KIND = {'sleeping':0, 'light_detecting':1, 'laser_detecting':2, 'indicating':3}
     __RET_SUCCESS = True
     __RET_FAIL = False
-    __DETECT_FREQ_SEC = 10
+    __LIGHT_DETECT_FREQ_SEC = 5
+    __LASER_DETECT_FREQ_SEC = 10
     __COLOR_VECT = np.array([0,0,1])
     __VECT_LEN_TH = 0.8
     __DEBUG_TIMER_FREQ_SEC = 0.2
-    __AUDIO_NAME = 'tanuki.wav'
+    __AUDIO_NAME_FULL = '../sound/lamp-oshizu.wav'
+    __AUDIO_NAME_LIGHT_ON = '../sound/tanuki.wav'
     __SAVE_IMG_PATH = '../debug/output_img'
     __SW_PIN_NUM = 20
 
     def __init__(self, detector):
-        self.__audio = audio_player.AudioPlayerPygame(StateMachine.__AUDIO_NAME)
+        self.__audio = audio_player.AudioPlayerPygame()
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
         sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
@@ -36,21 +43,34 @@ class StateMachine(object):
         self.__sleeping_proc = (self.__switch_proc_sleeping,
                                 self.__null_proc,
                                 self.__null_proc,
+                                self.__null_proc,
+                                self.__null_proc,
                                 self.__null_proc)
 
-        self.__detecting_proc = (self.__switch_proc_detecting_indicating,
-                                 self.__timer_proc,
-                                 self.__detected_full_proc,
-                                 self.__detected_not_full_proc
-                                 )
+        self.__light_detecting_proc = (self.__switch_proc_detecting_indicating,
+                                       self.__timer_proc_light_detecting,
+                                       self.__detected_full_proc,
+                                       self.__detected_not_full_proc,
+                                       self.__detected_light_on_proc,
+                                       self.__detected_light_off_proc)
+
+        self.__laser_detecting_proc = (self.__switch_proc_detecting_indicating,
+                                       self.__timer_proc_laser_detecting,
+                                       self.__detected_full_proc,
+                                       self.__detected_not_full_proc,
+                                       self.__detected_light_on_proc,
+                                       self.__null_proc)
 
         self.__indicating_proc = (self.__switch_proc_detecting_indicating,
+                                  self.__null_proc,
+                                  self.__null_proc,
                                   self.__null_proc,
                                   self.__null_proc,
                                   self.__null_proc)
 
         self.__procs = (self.__sleeping_proc,
-                        self.__detecting_proc,
+                        self.__light_detecting_proc,
+                        self.__laser_detecting_proc,
                         self.__indicating_proc)
 
         self.__event_buf = []
@@ -76,8 +96,8 @@ class StateMachine(object):
         pass
 
     def __switch_proc_sleeping(self):
-        self.__state_key = 'detecting'
-        timer = threading.Timer(StateMachine.__DETECT_FREQ_SEC,
+        self.__state_key = 'light_detecting'
+        timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
                                 self.__push_event,
                                 args=['timer'])
 
@@ -87,38 +107,72 @@ class StateMachine(object):
         self.__state_key = 'sleeping'
         self.__audio.stop()
 
-    def __timer_proc(self):
+
+    def __timer_proc_light_detecting(self):
+        _, img = self.__capture.read()
+        self.__detector.input_img(img)
+        result = self.__detector.detect()
+
+        if result == LineLaserDetector.RESULT_INVALID_ENV:
+            self.__push_event('detected_light_on')
+
+    def __timer_proc_laser_detecting(self):
         self.__timer_count += 1 #for debug
 
         _, img = self.__capture.read()
         self.__detector.input_img(img)
+        result = self.__detector.detect()
 
-        
-#        if self.__detector.detect():
-#            self.__push_event('detected_full')
-#            print('detected full!!')
-#            self.__detector.showResult()
+        if result == LineLaserDetector.RESULT_NOT_FULL:
+            self.__push_event('detected_not_full')
+
+        elif result == LineLaserDetector.RESULT_FULL:
+            self.__push_event('detected_full')
+
+        elif result == LineLaserDetector.RESULT_INVALID_ENV:
+            self.__push_event('detected_light_on')
 
         # else:
         #     self.__push_event('detected_not_full')
 
         ########### for debug ################
-        save_img = self.__detector.detect()
-        cv2.imwrite(StateMachine.__SAVE_IMG_PATH
-                    + '/capture_img'
-                    + str(self.__timer_count)
-                    + '.png'
-                    ,save_img)
-        
-        self.__push_event('detected_not_full')
+        # save_img = self.__detector.detect()
+        # cv2.imwrite(StateMachine.__SAVE_IMG_PATH
+        #             + '/capture_img'
+        #             + str(self.__timer_count)
+        #             + '.png'
+        #             ,save_img)
+
+#        self.__push_event('detected_not_full')
+    def __detected_light_on_proc(self):
+        self.__state_key = 'light_detecting'
+        self.__audio.set_music(StateMachine.__AUDIO_NAME_LIGHT_ON)
+        self.__audio.play(loop=True)
+        timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
+                                self.__push_event,
+                                args=['timer'])
+
+        timer.start()
+
+
+    def __detected_light_off_proc(self):
+        self.__state_key = 'laser_detecting'
+        self.__audio.set_music(StateMachine.__AUDIO_NAME_LIGHT_ON)
+        self.__audio.play(loop=True)
+        timer = threading.Timer(StateMachine.__LASER_DETECT_FREQ_SEC,
+                                self.__push_event,
+                                args=['timer'])
+
+        timer.start()
 
 
     def __detected_full_proc(self):
         self.__state_key = 'indicating'
+        self.__audio.set_music(StateMachine.__AUDIO_NAME_FULL)
         self.__audio.play(loop=True)
 
     def __detected_not_full_proc(self):
-        timer = threading.Timer(StateMachine.__DETECT_FREQ_SEC,
+        timer = threading.Timer(StateMachine.__LASER_DETECT_FREQ_SEC,
                                 self.__push_event,
                                 args=['timer'])
 
@@ -147,8 +201,8 @@ class StateMachine(object):
 
         timer_debug.start()
 
-        img = cv2.imread('button.png')#only for debug
-        
+#        img = cv2.imread('button.png')#only for debug
+
         while True:
             #switch debug
 #            cv2.imshow("switch", img)
