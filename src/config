@@ -1,3 +1,7 @@
 [debug]
 mac_debug = True
 pi_debug = False
+
+[led]
+pwm_duty = 50
+interval = {'sleeping':2, 'detecting':0.5}
