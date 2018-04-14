@@ -2,13 +2,13 @@
 
 import csv
 
-def readConfig():
+def readCalibFile():
     calib_data = {"angle":[0],
                   "level":[0],
                   "area":[0, 0, 0, 0]}
 
     try:
-        with open('../config.csv', 'r') as f:
+        with open('../calib.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 for col in range(len(row[1:])):

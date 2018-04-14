@@ -20,7 +20,7 @@ class Detector(object):
     RESULT_INVALID_ENV = 2
     
     def __init__(self):
-        self._calib_data = util.readConfig()
+        self._calib_data = util.readCalibFile()
         #not initialized param
         self._rotator = Cv2ImgRotator.Cv2ImgRotator()
         self._img_rotate = None

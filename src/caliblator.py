@@ -18,7 +18,7 @@ class Caliblator(object):
         self.__img_size = {"width":self.__img.shape[1], "height":self.__img.shape[0]}
         self.__img_size_tupple = (self.__img.shape[1], self.__img.shape[0])
         self.__line_y = 0
-        self.__calib_data = util.readConfig()
+        self.__calib_data = util.readCalibFile()
         self.__setting_area = False
 
         #debug
