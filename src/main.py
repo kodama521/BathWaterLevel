@@ -6,7 +6,12 @@ import numpy as np
 import sys
 import cv2  ##only for keybord debug
 import audio_player
-import switch_ctrl as sw
+
+mac_debug = True
+pi_debug = False
+
+if not mac_debug:
+    import switch_ctrl as sw
 
 COLOR_VECT = np.array([0,0,1])
 VECT_LEN_TH = 0.8
@@ -37,7 +42,9 @@ class StateMachine(object):
         self.__audio = audio_player.AudioPlayerPygame()
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
-        sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
+
+        if not mac_debug:
+            sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
 
         self.__state_key = 'sleeping'
         self.__sleeping_proc = (self.__switch_proc_sleeping,
@@ -115,6 +122,8 @@ class StateMachine(object):
 
         if result == LineLaserDetector.RESULT_INVALID_ENV:
             self.__push_event('detected_light_on')
+        else:
+            self.__push_event('detected_light_off')
 
     def __timer_proc_laser_detecting(self):
         self.__timer_count += 1 #for debug
@@ -127,13 +136,14 @@ class StateMachine(object):
             self.__push_event('detected_not_full')
 
         elif result == LineLaserDetector.RESULT_FULL:
+            cv2.imwrite('../debug/output_img/result.png', img)
             self.__push_event('detected_full')
 
         elif result == LineLaserDetector.RESULT_INVALID_ENV:
             self.__push_event('detected_light_on')
 
-        # else:
-        #     self.__push_event('detected_not_full')
+##        else:
+##            self.__push_event('detected_not_full')
 
         ########### for debug ################
         # save_img = self.__detector.detect()
@@ -196,19 +206,20 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
-        timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
-                                      self.__debug_print_state_loop)
+        if mac_debug:
+            timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
+                                          self.__debug_print_state_loop)
 
-        timer_debug.start()
+            timer_debug.start()
 
-#        img = cv2.imread('button.png')#only for debug
+            img = cv2.imread('button.png')#only for debug
 
         while True:
             #switch debug
-#            cv2.imshow("switch", img)
-#            if cv2.waitKey(1) == 115:  #'s'
-#                print('switch pushed!')
-            #self.__push_event('switch')
+            cv2.imshow("switch", img)
+            if cv2.waitKey(1) == 115:  #'s'
+                print('switch pushed!')
+                self.__push_event('switch')
 
             if self.__event_buf:
                 event_key = self.__event_buf[0]
