@@ -1,0 +1,3 @@
+[debug]
+mac_debug = True
+pi_debug = False

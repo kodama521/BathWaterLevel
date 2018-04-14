@@ -6,6 +6,8 @@ import numpy as np
 import sys
 import cv2  ##only for keybord debug
 import audio_player
+import configparser
+
 
 mac_debug = True
 pi_debug = False
@@ -43,7 +45,14 @@ class StateMachine(object):
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
 
-        if not mac_debug:
+        config = configparser.ConfigParser()
+        config.read('./config', 'UTF-8')
+
+        self.__mac_debug = config.get('debug', 'mac_debug')
+        self.__pi_debug = config.get('debug', 'pi_debug')
+
+
+        if not self.__mac_debug:
             sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
 
         self.__state_key = 'sleeping'
@@ -88,7 +97,6 @@ class StateMachine(object):
             sys.exit()
 
         self.__timer_count = 0
-
 
     def __push_event(self, event_key):
         print('pushed event:', event_key)
@@ -206,7 +214,7 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
-        if mac_debug:
+        if self.__mac_debug:
             timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
                                           self.__debug_print_state_loop)
 
