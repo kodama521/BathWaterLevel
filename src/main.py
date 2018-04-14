@@ -8,13 +8,16 @@ import cv2  ##only for keybord debug
 import audio_player
 import configparser
 
+config = configparser.ConfigParser()
+config.read('./config', 'UTF-8')
 
-mac_debug = True
-pi_debug = False
+mac_debug = config.get('debug', 'mac_debug')
+pi_debug = config.get('debug', 'pi_debug')
 
 if not mac_debug:
     import switch_ctrl as sw
     import led_ctrl
+    import RPi.GPIO as gpio
 
 COLOR_VECT = np.array([0,0,1])
 VECT_LEN_TH = 0.8
@@ -41,25 +44,23 @@ class StateMachine(object):
     __SAVE_IMG_PATH = '../debug/output_img'
     __SW_PIN_NUM = 20
     __LED_PIN_NUM = 14
+    __LASER_PIN = 16
 
     def __init__(self, detector):
         self.__audio = audio_player.AudioPlayerPygame()
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
 
-        config = configparser.ConfigParser()
-        config.read('./config', 'UTF-8')
-
-        self.__mac_debug = config.get('debug', 'mac_debug')
-        self.__pi_debug = config.get('debug', 'pi_debug')
-
-        if not self.__mac_debug:
+        if not mac_debug:
             sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
             self.__led = led_ctrl.LedControler(StateMachine.__LED_PIN_NUM, 1)
             self.__led_interval = config.get('led', 'interval')
             self.__led.set_blink_interval(self.__led_interval['sleeping'])
             self.__led.set_pwm_duty(config.get('led', 'pwm_duty'))
             self.__led.on()
+            gpio.setmode(gpio.BCM)
+            gpio.setup(StateMachine.__LASER_PIN, gpio.OUT)
+            gpio.output(StateMachine.__LASER_PIN, gpio.LOW)
 
         self.__state_key = 'sleeping'
         self.__sleeping_proc = (self.__switch_proc_sleeping,
@@ -104,6 +105,15 @@ class StateMachine(object):
 
         self.__timer_count = 0
 
+    @classmethod
+    def __laser_on(cls):
+        gpio.output(cls.__LASER_PIN, gpio.HIGH)
+
+    @classmethod
+    def __laser_off(cls):
+        gpio.output(cls.__LASER_PIN, gpio.LOW)
+
+
     def __push_event(self, event_key):
         print('pushed event:', event_key)
         if event_key not in StateMachine.__EVENT_KIND:
@@ -118,7 +128,7 @@ class StateMachine(object):
 
     def __switch_proc_sleeping(self):
         self.__state_key = 'light_detecting'
-        if not self.__mac_debug:
+        if not mac_debug:
             self.__led.set_blink_interval(self.__led_interval['detecting'])
         timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
                                 self.__push_event,
@@ -128,8 +138,9 @@ class StateMachine(object):
 
     def __switch_proc_detecting_indicating(self):
         self.__state_key = 'sleeping'
-        if not self.__mac_debug:
+        if not mac_debug:
             self.__led.set_blink_interval(self.__led_interval['sleeping'])
+            self.__laser_off()
 
         self.__audio.stop()
 
@@ -175,6 +186,9 @@ class StateMachine(object):
 #        self.__push_event('detected_not_full')
     def __detected_light_on_proc(self):
         self.__state_key = 'light_detecting'
+        if not mac_debug:
+            self.__laser_off()
+
         self.__audio.set_music(StateMachine.__AUDIO_NAME_LIGHT_ON)
         self.__audio.play(loop=True)
         timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
@@ -186,6 +200,9 @@ class StateMachine(object):
 
     def __detected_light_off_proc(self):
         self.__state_key = 'laser_detecting'
+        if not mac_debug:
+            self.__laser_on()
+
         self.__audio.set_music(StateMachine.__AUDIO_NAME_LIGHT_ON)
         self.__audio.play(loop=True)
         timer = threading.Timer(StateMachine.__LASER_DETECT_FREQ_SEC,
@@ -197,6 +214,9 @@ class StateMachine(object):
 
     def __detected_full_proc(self):
         self.__state_key = 'indicating'
+        if not mac_debug:
+            self.__laser_off()
+
         self.__audio.set_music(StateMachine.__AUDIO_NAME_FULL)
         self.__audio.play(loop=True)
 
@@ -225,7 +245,7 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
-        if self.__mac_debug:
+        if mac_debug:
             timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
                                           self.__debug_print_state_loop)
 
