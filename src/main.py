@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from line_laser_detector import LineLaserDetector
 import threading
-import numpy as np
 import sys
-import cv2  ##only for keybord debug
-import audio_player
 import configparser
+import cv2  ##only for keybord debug
+import numpy as np
+import audio_player
+from line_laser_detector import LineLaserDetector
 
 config = configparser.ConfigParser()
 config.read('./config', 'UTF-8')
@@ -115,7 +115,8 @@ class StateMachine(object):
 
 
     def __push_event(self, event_key):
-        print('pushed event:', event_key)
+        if mac_debug or pi_debug:
+            print('pushed event:', event_key)
         if event_key not in StateMachine.__EVENT_KIND:
             print('[push_event error] no such event:', event_key)
             return self.__RET_FAIL
@@ -245,7 +246,7 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
-        if mac_debug:
+        if mac_debug is True:
             timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
                                           self.__debug_print_state_loop)
 
@@ -255,14 +256,17 @@ class StateMachine(object):
 
         while True:
             #switch debug
-            cv2.imshow("switch", img)
-            if cv2.waitKey(1) == 115:  #'s'
-                print('switch pushed!')
-                self.__push_event('switch')
+            if mac_debug is True:
+                print('mac_debug!!', mac_debug, pi_debug)
+                cv2.imshow("switch", img)
+                if cv2.waitKey(1) == 115:  #'s'
+                    print('switch pushed!')
+                    self.__push_event('switch')
 
             if self.__event_buf:
                 event_key = self.__event_buf[0]
-                print('event:', event_key)
+                if mac_debug or pi_debug:
+                    print('event:', event_key)
                 del self.__event_buf[0]
 
                 self.__proc(event_key)
