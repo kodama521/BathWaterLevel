@@ -35,8 +35,8 @@ class ClientImg(object):
         return cv2.imdecode(narray,1)
 
 if __name__ == '__main__':
-#    HOST = "192.168.1.100"
-    HOST = "localhost"
+    HOST = "192.168.0.100"
+#    HOST = "localhost"
     PORT = 8000
 
     while True:
