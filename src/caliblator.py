@@ -184,7 +184,7 @@ class Caliblator(object):
                         self.__calib_data["area"][2],
                         self.__calib_data["area"][3]]]
         
-        with open(path + 'config.csv', 'w') as f:
+        with open(path + 'calib.csv', 'w') as f:
             writer = csv.writer(f, lineterminator='\n')
             writer.writerows(write_array)
 
@@ -204,8 +204,8 @@ class Caliblator(object):
                 self.__reSetLevel()
             elif key == 97: # a
                 self.__reSetArea()
-#            elif key == 27: #ESC
-#                break
+            elif key == 27: #ESC
+                break
 
             self.__saveConfig('../')
 
