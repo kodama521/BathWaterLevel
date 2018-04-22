@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from distutils.util import strtobool
 import threading
 import sys
 import configparser
@@ -11,10 +11,13 @@ from line_laser_detector import LineLaserDetector
 config = configparser.ConfigParser()
 config.read('./config', 'UTF-8')
 
-mac_debug = config.get('debug', 'mac_debug')
-pi_debug = config.get('debug', 'pi_debug')
+mac_debug = strtobool(config.get('debug', 'mac_debug'))
+pi_debug = strtobool(config.get('debug', 'pi_debug'))
 
-if not mac_debug:
+print ('mac_debug:',mac_debug)
+print ('pi_debug:',pi_debug)
+
+if mac_debug is not True:
     import switch_ctrl as sw
     import led_ctrl
     import RPi.GPIO as gpio
@@ -51,16 +54,20 @@ class StateMachine(object):
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
 
-        if not mac_debug:
+        if mac_debug is not True:
             sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
             self.__led = led_ctrl.LedControler(StateMachine.__LED_PIN_NUM, 1)
-            self.__led_interval = config.get('led', 'interval')
-            self.__led.set_blink_interval(self.__led_interval['sleeping'])
+            self.__led_interval_sleeping = float(config.get('led', 'interval_sleeping'))
+            self.__led_interval_detecting = float(config.get('led', 'interval_detecting'))
+            self.__led.set_blink_interval(self.__led_interval_sleeping)
             self.__led.set_pwm_duty(config.get('led', 'pwm_duty'))
-            self.__led.on()
+            self.__led.blink_start()
+            gpio.setwarnings(False)
             gpio.setmode(gpio.BCM)
             gpio.setup(StateMachine.__LASER_PIN, gpio.OUT)
             gpio.output(StateMachine.__LASER_PIN, gpio.LOW)
+
+            print('gpio and led init end!')
 
         self.__state_key = 'sleeping'
         self.__sleeping_proc = (self.__switch_proc_sleeping,
@@ -105,6 +112,7 @@ class StateMachine(object):
 
         self.__timer_count = 0
 
+        print('init end!')
     @classmethod
     def __laser_on(cls):
         gpio.output(cls.__LASER_PIN, gpio.HIGH)
@@ -115,7 +123,7 @@ class StateMachine(object):
 
 
     def __push_event(self, event_key):
-        if mac_debug or pi_debug:
+        if mac_debug is True or pi_debug is True:
             print('pushed event:', event_key)
         if event_key not in StateMachine.__EVENT_KIND:
             print('[push_event error] no such event:', event_key)
@@ -130,7 +138,7 @@ class StateMachine(object):
     def __switch_proc_sleeping(self):
         self.__state_key = 'light_detecting'
         if not mac_debug:
-            self.__led.set_blink_interval(self.__led_interval['detecting'])
+            self.__led.set_blink_interval(self.__led_interval_detecting)
         timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
                                 self.__push_event,
                                 args=['timer'])
@@ -140,7 +148,7 @@ class StateMachine(object):
     def __switch_proc_detecting_indicating(self):
         self.__state_key = 'sleeping'
         if not mac_debug:
-            self.__led.set_blink_interval(self.__led_interval['sleeping'])
+            self.__led.set_blink_interval(self.__led_interval_sleeping)
             self.__laser_off()
 
         self.__audio.stop()
@@ -246,7 +254,7 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
-        if mac_debug is True:
+        if mac_debug is True or pi_debug is True:
             timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
                                           self.__debug_print_state_loop)
 

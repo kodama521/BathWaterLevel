@@ -18,8 +18,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         
 
 #環境に応じて変更
-#HOST = '192.168.1.101'
-HOST = 'localhost'
+HOST = '192.168.0.100'
+#HOST = 'localhost'
 PORT = 8000
 
 #カメラの設定

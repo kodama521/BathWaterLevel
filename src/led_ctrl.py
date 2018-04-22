@@ -12,16 +12,19 @@ class LedControler(object):
         self.__pin_state = self.__off_state
         self.__timer = threading.Timer(self.__blink_interval,
                                        self.blink_start)
-        self.__duty = LedControler.__DEFAULT_BLINK_INTERVAL
+        self.__duty = LedControler.__DEFAULT_PWM_DUTY
         self.__start_flag = False
 
+        gpio.setwarnings(False)
         gpio.setmode(gpio.BCM)
         gpio.setup(pin, gpio.OUT)
         self.__pwm = gpio.PWM(pin, 1000)
 
     def on(self):
         self.blink_stop()
-        self.__pwm.start(self.__duty)
+        print('duty =',self.__duty)
+        print('interval =',self.__blink_interval)
+        self.__pwm.start(float(self.__duty))
         self.__pin_state = 1
 
     def off(self):
@@ -63,8 +66,15 @@ class LedControler(object):
         self.__pin_state = ~self.__pin_state & 0x01
 
         if self.__pin_state:
-            self.__pwm.start(self.__duty)
+            self.__pwm.start(float(self.__duty))
         else:
             self.__pwm.stop()
 
 
+if __name__ == '__main__':
+    led = LedControler(14,1) #fixme set args
+    led.set_pwm_duty(50)
+    led.set_blink_interval(2)
+    led.blink_start()
+    while(True):
+        pass

@@ -45,7 +45,10 @@ class LineLaserDetector(detector.Detector):
                     pix_val_sum += gray_area_img[y, x]
                     mask_count += 1
 
-        return pix_val_sum / mask_count
+        if mask_count == 0:
+            return 0
+        else:
+            return pix_val_sum / mask_count
 
     @classmethod
     def __detect_light_on(cls, gray_img):
@@ -64,7 +67,7 @@ class LineLaserDetector(detector.Detector):
             return LineLaserDetector.RESULT_INVALID
 
         tmp_gray_rotate_img = cv2.cvtColor(self._img_resize, cv2.COLOR_RGB2GRAY)
-        cv2.imshow("debug_gray_img", tmp_gray_rotate_img)
+#        cv2.imshow("debug_gray_img", tmp_gray_rotate_img)
         if LineLaserDetector.__detect_light_on(tmp_gray_rotate_img):
             return LineLaserDetector.RESULT_INVALID_ENV
 

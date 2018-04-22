@@ -1,7 +1,8 @@
 [debug]
-mac_debug = True
-pi_debug = False
+mac_debug = False
+pi_debug = True
 
 [led]
 pwm_duty = 50
-interval = {'sleeping':2, 'detecting':0.5}
+interval_sleeping = 2
+interval_detecting = 0.5
