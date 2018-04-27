@@ -12,7 +12,7 @@ class LineLaserDetector(detector.Detector):
         super().__init__()
 
     @staticmethod
-    def __get_raser_gray_img(img, red_th):
+    def __get_laser_gray_img(img, red_th):
         img_size = {"w":img.shape[1], "h":img.shape[0]}
         red_img = img.copy()[:,:,2]
 
@@ -61,7 +61,7 @@ class LineLaserDetector(detector.Detector):
 #        print(val)
         return val > cls.__LIGHT_ON_TH
 
-    def detect(self):
+    def detect(self, mode='laser'):
         if not self._inited:
             print('input image!!')
             return LineLaserDetector.RESULT_INVALID
@@ -70,19 +70,26 @@ class LineLaserDetector(detector.Detector):
 #        cv2.imshow("debug_gray_img", tmp_gray_rotate_img)
         if LineLaserDetector.__detect_light_on(tmp_gray_rotate_img):
             return LineLaserDetector.RESULT_INVALID_ENV
+        else:
+            if mode == 'on_off':
+                return LineLaserDetector.RESULT_VALID_ENV
 
-        clip_img = self.__get_clip_area_img(self._img_rotate)
-        tmp_gray_clip_img = self.__get_raser_gray_img(clip_img, 0)
-        th, _ = cv2.threshold(tmp_gray_clip_img, 0, 1, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            elif mode == 'laser':
+                clip_img = self.__get_clip_area_img(self._img_rotate)
+                tmp_gray_clip_img = self.__get_laser_gray_img(clip_img, 0)
+                th, _ = cv2.threshold(tmp_gray_clip_img, 0, 1, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            
+                gray_img = self.__get_laser_gray_img(self._img_rotate, th)
+            
+                line_intensity = self.__get_laser_intensity(gray_img)
+            
+                if line_intensity > LineLaserDetector.__LASER_INTENSITY_TH:
+                    return LineLaserDetector.RESULT_FULL
 
-        gray_img = self.__get_raser_gray_img(self._img_rotate, th)
+                return LineLaserDetector.RESULT_NOT_FULL
 
-        line_intensity = self.__get_laser_intensity(gray_img)
-
-        if line_intensity > LineLaserDetector.__LASER_INTENSITY_TH:
-            return LineLaserDetector.RESULT_FULL
-
-        return LineLaserDetector.RESULT_NOT_FULL
+            else:
+                return LineLaserDetector.RESULT_ERROR
 
 if __name__ == '__main__':
     IMG_NAME1 = '../test_img/IMG_7645.JPG'

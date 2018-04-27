@@ -17,7 +17,7 @@ pi_debug = strtobool(config.get('debug', 'pi_debug'))
 print ('mac_debug:',mac_debug)
 print ('pi_debug:',pi_debug)
 
-if mac_debug is not True:
+if not mac_debug:
     import switch_ctrl as sw
     import led_ctrl
     import RPi.GPIO as gpio
@@ -54,7 +54,7 @@ class StateMachine(object):
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
 
-        if mac_debug is not True:
+        if not mac_debug:
             sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
             self.__led = led_ctrl.LedControler(StateMachine.__LED_PIN_NUM, 1)
             self.__led_interval_sleeping = float(config.get('led', 'interval_sleeping'))
@@ -123,7 +123,7 @@ class StateMachine(object):
 
 
     def __push_event(self, event_key):
-        if mac_debug is True or pi_debug is True:
+        if mac_debug  or pi_debug:
             print('pushed event:', event_key)
         if event_key not in StateMachine.__EVENT_KIND:
             print('[push_event error] no such event:', event_key)
@@ -157,7 +157,7 @@ class StateMachine(object):
     def __timer_proc_light_detecting(self):
         _, img = self.__capture.read()
         self.__detector.input_img(img)
-        result = self.__detector.detect()
+        result = self.__detector.detect(mode='on_off')
 
         if result == LineLaserDetector.RESULT_INVALID_ENV:
             self.__push_event('detected_light_on')
@@ -254,18 +254,19 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
+        if mac_debug:
+            img = cv2.imread('button.png')#only for debug
+
         if mac_debug is True or pi_debug is True:
             timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
                                           self.__debug_print_state_loop)
 
             timer_debug.start()
 
-            img = cv2.imread('button.png')#only for debug
 
         while True:
             #switch debug
-            if mac_debug is True:
-                print('mac_debug!!', mac_debug, pi_debug)
+            if mac_debug:
                 cv2.imshow("switch", img)
                 if cv2.waitKey(1) == 115:  #'s'
                     print('switch pushed!')
@@ -275,6 +276,7 @@ class StateMachine(object):
                 event_key = self.__event_buf[0]
                 if mac_debug or pi_debug:
                     print('event:', event_key)
+                    print('status:', self.__state_key)
                 del self.__event_buf[0]
 
                 self.__proc(event_key)

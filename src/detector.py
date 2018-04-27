@@ -14,10 +14,13 @@ class Detector(object):
     _PIX_INTENSITY_TH = 100
     _IMG_SIZE =(320 ,240)
 
-    RESULT_INVALID = -1
+    RESULT_ERROR = -1
+
     RESULT_NOT_FULL = 0
     RESULT_FULL = 1
     RESULT_INVALID_ENV = 2
+    RESULT_VALID_ENV = 3
+
     
     def __init__(self):
         self._calib_data = util.readCalibFile()
