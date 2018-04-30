@@ -5,7 +5,7 @@ import sys
 import util
 
 class LineLaserDetector(detector.Detector):
-    __LASER_INTENSITY_TH = 100
+    __LASER_INTENSITY_TH = 40
     __LIGHT_ON_TH = 70
 
     def __init__(self):
