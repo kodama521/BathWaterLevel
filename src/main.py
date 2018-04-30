@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from distutils.util import strtobool
 import threading
 import sys
@@ -282,8 +283,20 @@ class StateMachine(object):
                 self.__proc(event_key)
 
 
+def fork(func):
+    pid = os.fork()
+    
+    if pid > 0:
+        f = open('/var/run/BathWaterLevel.pid','w')
+        f.write(str(pid)+"\n")
+        f.close()
+        sys.exit()
+
+    if pid == 0:
+        func()
 
 if __name__ == '__main__':
     detector = LineLaserDetector()
     state_machine = StateMachine(detector)
-    state_machine.start_wait_event_loop()
+
+    fork(state_machine.start_wait_event_loop())
