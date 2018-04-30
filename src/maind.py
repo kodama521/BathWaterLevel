@@ -299,4 +299,4 @@ if __name__ == '__main__':
     detector = LineLaserDetector()
     state_machine = StateMachine(detector)
 
-    fork(state_machine.start_wait_event_loop())
+    fork(state_machine.start_wait_event_loop)
