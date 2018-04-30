@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import paramiko
-import ssh
 import scp
 
 class MySsh(object):
