@@ -18,7 +18,9 @@ class LedControler(object):
         gpio.setwarnings(False)
         gpio.setmode(gpio.BCM)
         gpio.setup(pin, gpio.OUT)
-        self.__pwm = gpio.PWM(pin, 1000)
+#        self.__pwm = gpio.PWM(pin, 1000)
+        self.__pwm = gpio.PWM(pin, 1)
+        self.__pwm.stop()
 
     def on(self):
         self.blink_stop()
@@ -31,6 +33,8 @@ class LedControler(object):
         self.blink_stop()
         self.__pwm.stop()
         self.__pin_state = 0
+
+        print('led off')
 
 
     def blink_start(self):
@@ -61,6 +65,10 @@ class LedControler(object):
 
     def set_pwm_duty(self, duty):
         self.__duty = duty
+
+    def set_pwm_freq(self, freq):
+        self.off()
+        self.__pwm = gpio.PWM(self.__pin, freq)        
 
     def __toggle(self):
         self.__pin_state = ~self.__pin_state & 0x01
