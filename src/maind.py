@@ -1,4 +1,6 @@
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
 import os
 from distutils.util import strtobool
 import threading
@@ -8,25 +10,9 @@ import cv2  ##only for keybord debug
 import numpy as np
 import audio_player
 from line_laser_detector import LineLaserDetector
-
-config = configparser.ConfigParser()
-config.read('./config', 'UTF-8')
-
-mac_debug = strtobool(config.get('debug', 'mac_debug'))
-pi_debug = strtobool(config.get('debug', 'pi_debug'))
-
-print ('mac_debug:',mac_debug)
-print ('pi_debug:',pi_debug)
-
-if not mac_debug:
-    import switch_ctrl as sw
-    import led_ctrl
-    import RPi.GPIO as gpio
-
-COLOR_VECT = np.array([0,0,1])
-VECT_LEN_TH = 0.8
-LEVEL_TH = 100
-
+import switch_ctrl as sw
+import led_ctrl
+import RPi.GPIO as gpio
 
 class StateMachine(object):
     __EVENT_KIND = {'switch':0,
@@ -55,14 +41,22 @@ class StateMachine(object):
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
 
-        if not mac_debug:
+        self.__config = configparser.ConfigParser()
+        self.__config.read('./config', 'UTF-8')
+
+        self.__mac_debug = strtobool(self.__config.get('debug', 'mac_debug'))
+        self.__pi_debug = strtobool(self.__config.get('debug', 'pi_debug'))
+
+        if not self.__mac_debug:
             sw.sw_set_callback(StateMachine.__SW_PIN_NUM, (lambda pin: self.__push_event('switch')))
             self.__led = led_ctrl.LedControler(StateMachine.__LED_PIN_NUM, 1)
-            self.__led_interval_sleeping = float(config.get('led', 'interval_sleeping'))
-            self.__led_interval_detecting = float(config.get('led', 'interval_detecting'))
-            self.__led.set_blink_interval(self.__led_interval_sleeping)
-            self.__led.set_pwm_duty(config.get('led', 'pwm_duty'))
-            self.__led.blink_start()
+            self.__led_interval_sleeping = float(self.__config.get('led', 'interval_sleeping'))
+            self.__led_interval_detecting = float(self.__config.get('led', 'interval_detecting'))
+#            self.__led.set_blink_interval(self.__led_interval_sleeping)
+#            self.__led.set_pwm_duty(self.__config.get('led', 'pwm_duty'))
+#            self.__led.blink_start()
+            self.__led.set_pwm_freq(1.0/self.__led_interval_sleeping)
+            self.__led.on()
             gpio.setwarnings(False)
             gpio.setmode(gpio.BCM)
             gpio.setup(StateMachine.__LASER_PIN, gpio.OUT)
@@ -124,7 +118,7 @@ class StateMachine(object):
 
 
     def __push_event(self, event_key):
-        if mac_debug  or pi_debug:
+        if self.__mac_debug  or self.__pi_debug:
             print('pushed event:', event_key)
         if event_key not in StateMachine.__EVENT_KIND:
             print('[push_event error] no such event:', event_key)
@@ -138,8 +132,10 @@ class StateMachine(object):
 
     def __switch_proc_sleeping(self):
         self.__state_key = 'light_detecting'
-        if not mac_debug:
-            self.__led.set_blink_interval(self.__led_interval_detecting)
+        if not self.__mac_debug:
+            #self.__led.set_blink_interval(self.__led_interval_detecting)
+            self.__led.set_pwm_freq(1.0/self.__led_interval_detecting)
+            self.__led.on()
         timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
                                 self.__push_event,
                                 args=['timer'])
@@ -148,14 +144,20 @@ class StateMachine(object):
 
     def __switch_proc_detecting_indicating(self):
         self.__state_key = 'sleeping'
-        if not mac_debug:
-            self.__led.set_blink_interval(self.__led_interval_sleeping)
+        if not self.__mac_debug:
+#            self.__led.set_blink_interval(self.__led_interval_sleeping)
+            self.__led.set_pwm_freq(1.0/self.__led_interval_sleeping)
+            self.__led.on()
+
             self.__laser_off()
 
         self.__audio.stop()
 
 
     def __timer_proc_light_detecting(self):
+        for i in range(2): ## kara capture
+            self.__capture.read()
+
         _, img = self.__capture.read()
         self.__detector.input_img(img)
         result = self.__detector.detect(mode='on_off')
@@ -167,6 +169,9 @@ class StateMachine(object):
 
     def __timer_proc_laser_detecting(self):
         self.__timer_count += 1 #for debug
+
+        for i in range(2): ## kara capture
+            self.__capture.read()
 
         _, img = self.__capture.read()
         self.__detector.input_img(img)
@@ -196,7 +201,7 @@ class StateMachine(object):
 #        self.__push_event('detected_not_full')
     def __detected_light_on_proc(self):
         self.__state_key = 'light_detecting'
-        if not mac_debug:
+        if not self.__mac_debug:
             self.__laser_off()
 
         self.__audio.set_music(StateMachine.__AUDIO_NAME_LIGHT_ON)
@@ -210,11 +215,11 @@ class StateMachine(object):
 
     def __detected_light_off_proc(self):
         self.__state_key = 'laser_detecting'
-        if not mac_debug:
+        if not self.__mac_debug:
             self.__laser_on()
 
         self.__audio.set_music(StateMachine.__AUDIO_NAME_LIGHT_ON)
-        self.__audio.play(loop=True)
+        self.__audio.stop()
         timer = threading.Timer(StateMachine.__LASER_DETECT_FREQ_SEC,
                                 self.__push_event,
                                 args=['timer'])
@@ -224,7 +229,7 @@ class StateMachine(object):
 
     def __detected_full_proc(self):
         self.__state_key = 'indicating'
-        if not mac_debug:
+        if not self.__mac_debug:
             self.__laser_off()
 
         self.__audio.set_music(StateMachine.__AUDIO_NAME_FULL)
@@ -255,10 +260,10 @@ class StateMachine(object):
         timer_debug.start()
 
     def start_wait_event_loop(self):
-        if mac_debug:
+        if self.__mac_debug:
             img = cv2.imread('button.png')#only for debug
 
-        if mac_debug is True or pi_debug is True:
+        if self.__mac_debug is True or self.__pi_debug is True:
             timer_debug = threading.Timer(StateMachine.__DEBUG_TIMER_FREQ_SEC,
                                           self.__debug_print_state_loop)
 
@@ -267,7 +272,7 @@ class StateMachine(object):
 
         while True:
             #switch debug
-            if mac_debug:
+            if self.__mac_debug:
                 cv2.imshow("switch", img)
                 if cv2.waitKey(1) == 115:  #'s'
                     print('switch pushed!')
@@ -275,7 +280,7 @@ class StateMachine(object):
 
             if self.__event_buf:
                 event_key = self.__event_buf[0]
-                if mac_debug or pi_debug:
+                if self.__mac_debug or self.__pi_debug:
                     print('event:', event_key)
                     print('status:', self.__state_key)
                 del self.__event_buf[0]
@@ -283,7 +288,7 @@ class StateMachine(object):
                 self.__proc(event_key)
 
 
-def fork(func):
+def fork():
     pid = os.fork()
     
     if pid > 0:
@@ -293,10 +298,16 @@ def fork(func):
         sys.exit()
 
     if pid == 0:
-        func()
+        print('Bath Water Level Detection Service start!')
+        detector = LineLaserDetector()
+        state_machine = StateMachine(detector)
+
+        state_machine.start_wait_event_loop()
 
 if __name__ == '__main__':
+#    fork()
+    print('Bath Water Level Detection Service start!')
     detector = LineLaserDetector()
     state_machine = StateMachine(detector)
-
-    fork(state_machine.start_wait_event_loop)
+    state_machine.start_wait_event_loop()
+    
