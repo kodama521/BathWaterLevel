@@ -12,7 +12,8 @@ class TCPHandler(socketserver.BaseRequestHandler):
         #HELLOを受け取ったらJPEG圧縮したカメラ画像を文字列にして送信
         rcv_data = self.request.recv(1024).strip()
         if rcv_data == b'HELLO':
-            _, frame = capture.read()
+            for i in range(3):
+                _, frame = capture.read()
             jpegstring = cv2.imencode('.jpeg',frame)[1].tostring()
             self.request.send(jpegstring)
         
