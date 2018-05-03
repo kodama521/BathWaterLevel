@@ -40,6 +40,7 @@ class StateMachine(object):
 
     def __init__(self, detector):
         subprocess.call(['v4l2-ctl', '--set-ctrl=brightness=10'])  # set camera brightness
+        subprocess.call(['amixer', 'sset', 'PCM', '100%'])  # set camera brightness
         self.__audio = audio_player.AudioPlayerPygame()
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
