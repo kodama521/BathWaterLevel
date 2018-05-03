@@ -47,6 +47,10 @@ class Detector(object):
         self._img_result = self._img_rotate.copy()
         self._inited = True
 
+    def get_calib_img(self):
+        return self._img_rotate
+
+if __name__ == '__main__':
     @staticmethod
     def _get_mean_pixel(img, x_range, y_range):
         bgr_vect_sum = np.array([0,0,0])

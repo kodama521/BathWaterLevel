@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import time
 from distutils.util import strtobool
 import threading
 import sys
@@ -13,6 +14,7 @@ from line_laser_detector import LineLaserDetector
 import switch_ctrl as sw
 import led_ctrl
 import RPi.GPIO as gpio
+import subprocess
 
 class StateMachine(object):
     __EVENT_KIND = {'switch':0,
@@ -37,6 +39,7 @@ class StateMachine(object):
     __LASER_PIN = 16
 
     def __init__(self, detector):
+        subprocess.call(['v4l2-ctl', '--set-ctrl=brightness=10'])  # set camera brightness
         self.__audio = audio_player.AudioPlayerPygame()
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
@@ -157,6 +160,7 @@ class StateMachine(object):
     def __timer_proc_light_detecting(self):
         for i in range(2): ## kara capture
             self.__capture.read()
+            time.sleep(0.1)
 
         _, img = self.__capture.read()
         self.__detector.input_img(img)
@@ -172,23 +176,29 @@ class StateMachine(object):
 
         for i in range(2): ## kara capture
             self.__capture.read()
+            time.sleep(0.1)
 
         _, img = self.__capture.read()
         self.__detector.input_img(img)
         result = self.__detector.detect()
 
         if result == LineLaserDetector.RESULT_NOT_FULL:
+            if self.__pi_debug:
+                cv2.imwrite('../debug/output_img/result_not_full' + str(self.__timer_count) + '.png',
+                            self.__detector.get_calib_img())
             self.__push_event('detected_not_full')
 
         elif result == LineLaserDetector.RESULT_FULL:
-            cv2.imwrite('../debug/output_img/result.png', img)
+            if self.__pi_debug:
+                cv2.imwrite('../debug/output_img/result_full' + str(self.__timer_count) + '.png',
+                            self.__detector.get_calib_img())
             self.__push_event('detected_full')
 
         elif result == LineLaserDetector.RESULT_INVALID_ENV:
             self.__push_event('detected_light_on')
 
-##        else:
-##            self.__push_event('detected_not_full')
+        else:
+            self.__push_event('detected_not_full')  ##fixme
 
         ########### for debug ################
         # save_img = self.__detector.detect()

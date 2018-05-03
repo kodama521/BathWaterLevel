@@ -5,7 +5,8 @@ import sys
 import util
 
 class LineLaserDetector(detector.Detector):
-    __LASER_INTENSITY_TH = 40
+    __LASER_INTENSITY_INVALID_TH = 20
+    __LASER_INTENSITY_TH = 50
     __LIGHT_ON_TH = 70
 
     def __init__(self):
@@ -82,8 +83,12 @@ class LineLaserDetector(detector.Detector):
                 gray_img = self.__get_laser_gray_img(self._img_rotate, th)
             
                 line_intensity = self.__get_laser_intensity(gray_img)
-            
-                if line_intensity > LineLaserDetector.__LASER_INTENSITY_TH:
+
+                if line_intensity < LineLaserDetector.__LASER_INTENSITY_INVALID_TH:
+                    return LineLaserDetector.RESULT_ERROR
+                
+                if line_intensity < LineLaserDetector.__LASER_INTENSITY_TH and\
+                   line_intensity > LineLaserDetector.__LASER_INTENSITY_INVALID_TH:
                     return LineLaserDetector.RESULT_FULL
 
                 return LineLaserDetector.RESULT_NOT_FULL
