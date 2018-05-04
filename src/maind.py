@@ -31,22 +31,23 @@ class StateMachine(object):
     __COLOR_VECT = np.array([0,0,1])
     __VECT_LEN_TH = 0.8
     __DEBUG_TIMER_FREQ_SEC = 0.2
-    __AUDIO_NAME_FULL = '../sound/lamp-oshizu.wav'
-    __AUDIO_NAME_LIGHT_ON = '../sound/tanuki.wav'
-    __SAVE_IMG_PATH = '../debug/output_img'
+    __PATH_BASE = os.path.dirname(os.path.abspath(__file__))
+    __AUDIO_NAME_FULL = os.path.normpath(os.path.join(__PATH_BASE, '../sound/lamp-oshizu.wav'))
+    __AUDIO_NAME_LIGHT_ON = os.path.normpath(os.path.join(__PATH_BASE, '../sound/tanuki.wav'))
+    __SAVE_IMG_PATH =  os.path.normpath(os.path.join(__PATH_BASE, '../debug/output_img'))
     __SW_PIN_NUM = 20
     __LED_PIN_NUM = 14
     __LASER_PIN = 16
 
     def __init__(self, detector):
         subprocess.call(['v4l2-ctl', '--set-ctrl=brightness=10'])  # set camera brightness
-        subprocess.call(['amixer', 'sset', 'PCM', '100%'])  # set camera brightness
+        subprocess.call(['amixer', 'sset', 'PCM', '100%'])  # set camera brightness        
         self.__audio = audio_player.AudioPlayerPygame()
         self.__capture = cv2.VideoCapture(0)
         self.__detector = detector
 
         self.__config = configparser.ConfigParser()
-        self.__config.read('./config', 'UTF-8')
+        self.__config.read(os.path.join(StateMachine.__PATH_BASE, './config'), 'UTF-8')
 
         self.__mac_debug = strtobool(self.__config.get('debug', 'mac_debug'))
         self.__pi_debug = strtobool(self.__config.get('debug', 'pi_debug'))
@@ -185,13 +186,16 @@ class StateMachine(object):
 
         if result == LineLaserDetector.RESULT_NOT_FULL:
             if self.__pi_debug:
-                cv2.imwrite('../debug/output_img/result_not_full' + str(self.__timer_count) + '.png',
+                tmp_path = os.path.normpath(os.path.join(StateMachine.__PATH_BASE, '../debug/output_img/result_not_full'))                
+                cv2.imwrite(tmp_path + str(self.__timer_count) + '.png',
                             self.__detector.get_calib_img())
             self.__push_event('detected_not_full')
 
         elif result == LineLaserDetector.RESULT_FULL:
             if self.__pi_debug:
-                cv2.imwrite('../debug/output_img/result_full' + str(self.__timer_count) + '.png',
+                tmp_path = os.path.normpath(os.path.join(StateMachine.__PATH_BASE, '../debug/output_img/result_full'))
+
+                cv2.imwrite(tmp_path + str(self.__timer_count) + '.png',
                             self.__detector.get_calib_img())
             self.__push_event('detected_full')
 
@@ -316,9 +320,9 @@ def fork():
         state_machine.start_wait_event_loop()
 
 if __name__ == '__main__':
-#    fork()
-    print('Bath Water Level Detection Service start!')
-    detector = LineLaserDetector()
-    state_machine = StateMachine(detector)
-    state_machine.start_wait_event_loop()
+    fork()
+#    print('Bath Water Level Detection Service start!')
+#    detector = LineLaserDetector()
+#    state_machine = StateMachine(detector)
+#    state_machine.start_wait_event_loop()
     

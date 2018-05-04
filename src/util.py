@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import csv
+import os
 
 def readCalibFile():
     calib_data = {"angle":[0],
                   "level":[0],
                   "area":[0, 0, 0, 0]}
 
+    path_base = os.path.dirname(os.path.abspath(__file__))
+    path_calib_file = os.path.normpath(os.path.join(path_base, '../calib.csv'))
+
+
     try:
-        with open('../calib.csv', 'r') as f:
+        with open(path_calib_file, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 for col in range(len(row[1:])):
