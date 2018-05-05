@@ -64,11 +64,10 @@ class LedControler(object):
         self.__blink_interval = interval
 
     def set_pwm_duty(self, duty):
-        self.__duty = duty
+        self.__pwm.ChangeDutyCycle(duty)
 
     def set_pwm_freq(self, freq):
-        self.off()
-        self.__pwm = gpio.PWM(self.__pin, freq)        
+        self.__pwm.ChangeFrequency(freq)
 
     def __toggle(self):
         self.__pin_state = ~self.__pin_state & 0x01
