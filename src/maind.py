@@ -32,8 +32,8 @@ class StateMachine(object):
     __VECT_LEN_TH = 0.8
     __DEBUG_TIMER_FREQ_SEC = 0.2
     __PATH_BASE = os.path.dirname(os.path.abspath(__file__))
-    __AUDIO_NAME_FULL = os.path.normpath(os.path.join(__PATH_BASE, '../sound/lamp-oshizu.wav'))
-    __AUDIO_NAME_LIGHT_ON = os.path.normpath(os.path.join(__PATH_BASE, '../sound/tanuki.wav'))
+    __AUDIO_NAME_FULL = os.path.normpath(os.path.join(__PATH_BASE, '../sound/meron_large_16db.wav'))
+    __AUDIO_NAME_LIGHT_ON = os.path.normpath(os.path.join(__PATH_BASE, '../sound/lamp-oshizu_large_16db.wav'))
     __SAVE_IMG_PATH =  os.path.normpath(os.path.join(__PATH_BASE, '../debug/output_img'))
     __SW_PIN_NUM = 20
     __LED_PIN_NUM = 14
