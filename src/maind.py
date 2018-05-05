@@ -140,7 +140,6 @@ class StateMachine(object):
         if not self.__mac_debug:
             #self.__led.set_blink_interval(self.__led_interval_detecting)
             self.__led.set_pwm_freq(1.0/self.__led_interval_detecting)
-            self.__led.on()
         timer = threading.Timer(StateMachine.__LIGHT_DETECT_FREQ_SEC,
                                 self.__push_event,
                                 args=['timer'])
@@ -152,7 +151,6 @@ class StateMachine(object):
         if not self.__mac_debug:
 #            self.__led.set_blink_interval(self.__led_interval_sleeping)
             self.__led.set_pwm_freq(1.0/self.__led_interval_sleeping)
-            self.__led.on()
 
             self.__laser_off()
 
